@@ -6,7 +6,6 @@ const ASSETS_TO_CACHE = [
     './ui/app.js',
     './services/pdfService.js',
     './favicon.svg',
-    './frame.png',
     'https://unpkg.com/jszip@3.10.1/dist/jszip.min.js',
     'https://unpkg.com/@neslinesli93/qpdf-wasm@0.3.0/dist/qpdf.js',
     'https://unpkg.com/@neslinesli93/qpdf-wasm@0.3.0/dist/qpdf.wasm',
