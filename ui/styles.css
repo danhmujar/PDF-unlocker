@@ -613,8 +613,8 @@ input[type="file"] {
 
 .dev-credit-info strong {
     font-family: var(--font-heading);
-    font-size: 0.8125rem;
-    font-weight: 600;
+    font-size: 1.1rem;
+    font-weight: 700;
     color: var(--text-color);
     display: block;
     margin-bottom: 0.15rem;
