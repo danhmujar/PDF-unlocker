@@ -213,7 +213,22 @@ async function processQueue() {
             onStatus: (state, main, sub) => {
                 // Update global status with current file info
                 if (isQueueRunning) {
-                    updateStatus('processing', `Unlocking (${currentBatchProcessed + 1}/${currentBatchTotal})`, `${file.name}: ${main}`);
+                    let displaySub = sub;
+                    
+                    // Task 2: Scale-aware feedback & Granular steps
+                    if (file.size > 250 * 1024 * 1024) {
+                        displaySub = `Large File Optimization active... ${sub}`;
+                    }
+
+                    if (sub.includes("Accessing file via WorkerFS")) {
+                        displaySub = `Step 1/3: Mounting virtual filesystem (${(file.size / 1024 / 1024).toFixed(0)}MB)`;
+                    } else if (sub.includes("Removing restrictions securely")) {
+                        displaySub = "Step 2/3: Unlocking core...";
+                    } else if (sub.includes("Preparing output")) {
+                        displaySub = "Step 3/3: Finalizing memory...";
+                    }
+
+                    updateStatus('processing', `Unlocking (${currentBatchProcessed + 1}/${currentBatchTotal})`, `${file.name}: ${displaySub}`);
                     updateCardStatus(file, 'processing', main);
                 }
             }
@@ -381,6 +396,13 @@ function queueFiles(fileList) {
         resetState();
         return;
     }
+
+    // Heavy Load Detection
+    const totalSize = files.reduce((acc, f) => acc + f.size, 0);
+    if (totalSize > 1024 * 1024 * 1024) {
+        updateStatus('processing', 'Heavy Load Detected', 'Processing 1GB+ may take several minutes. Ensure your browser tab remains active.');
+    }
+
     fileQueue.push(...files);
     processQueue();
 }
