@@ -77,7 +77,7 @@ describe('pdfService (Worker Proxy)', () => {
         const mockFile = {
             type: 'application/pdf',
             name: 'large.pdf',
-            size: 101 * 1024 * 1024 // 101MB
+            size: 1025 * 1024 * 1024 // 1025MB
         };
         const onStatus = vi.fn();
         const fileInput = { value: 'something' };
@@ -104,15 +104,13 @@ describe('pdfService (Worker Proxy)', () => {
         expect(pdfService.wasmSupportStatus).toBe('supported');
     });
 
-    it('should proxy processFile to worker pool with Transferables', async () => {
+    it('should proxy processFile to worker pool transferring File objects', async () => {
         const onStatus = vi.fn();
         const fileInput = { value: 'something' };
-        const mockBuffer = new ArrayBuffer(8);
         const mockFile = {
             type: 'application/pdf',
             name: 'test.pdf',
-            size: 100,
-            arrayBuffer: vi.fn().mockResolvedValue(mockBuffer)
+            size: 100
         };
 
         // Start processing
@@ -127,13 +125,11 @@ describe('pdfService (Worker Proxy)', () => {
 
         // Wait for the service to proceed to 'process' message
         await vi.waitFor(() => expect(workers[0].postMessage).toHaveBeenCalledWith(
-            expect.objectContaining({ type: 'process' }),
-            expect.any(Array)
+            expect.objectContaining({ type: 'process' })
         ));
 
         expect(workers[0].postMessage).toHaveBeenCalledWith(
-            { type: 'process', file: mockBuffer, name: 'test.pdf' },
-            [mockBuffer]
+            { type: 'process', file: mockFile, name: 'test.pdf' }
         );
 
         // Simulate success from worker
@@ -151,8 +147,7 @@ describe('pdfService (Worker Proxy)', () => {
         const mockFile = {
             type: 'application/pdf',
             name: 'test.pdf',
-            size: 100,
-            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+            size: 100
         };
 
         pdfService.processFile(mockFile, { onStatus });
@@ -161,8 +156,7 @@ describe('pdfService (Worker Proxy)', () => {
         workers[0].onmessage({ data: { type: 'ready' } });
         
         await vi.waitFor(() => expect(workers[0].postMessage).toHaveBeenCalledWith(
-            expect.objectContaining({ type: 'process' }),
-            expect.any(Array)
+            expect.objectContaining({ type: 'process' })
         ));
 
         // Simulate status update
@@ -183,8 +177,7 @@ describe('pdfService (Worker Proxy)', () => {
         const mockFile = {
             type: 'application/pdf',
             name: 'corrupt.pdf',
-            size: 100,
-            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+            size: 100
         };
 
         const processPromise = pdfService.processFile(mockFile, { onStatus });
@@ -193,8 +186,7 @@ describe('pdfService (Worker Proxy)', () => {
         workers[0].onmessage({ data: { type: 'ready' } });
         
         await vi.waitFor(() => expect(workers[0].postMessage).toHaveBeenCalledWith(
-            expect.objectContaining({ type: 'process' }),
-            expect.any(Array)
+            expect.objectContaining({ type: 'process' })
         ));
 
         // Simulate error from worker
@@ -226,8 +218,7 @@ describe('pdfService (Worker Proxy)', () => {
             const mockFile = {
                 type: 'application/pdf',
                 name: 'test.pdf',
-                size: 100,
-                arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+                size: 100
             };
             const callbacks = { onStatus: vi.fn() };
 
@@ -240,8 +231,7 @@ describe('pdfService (Worker Proxy)', () => {
             firstWorker.onmessage({ data: { type: 'ready' } });
             
             await vi.waitFor(() => expect(firstWorker.postMessage).toHaveBeenCalledWith(
-                expect.objectContaining({ type: 'process' }),
-                expect.any(Array)
+                expect.objectContaining({ type: 'process' })
             ));
         });
 
@@ -252,8 +242,7 @@ describe('pdfService (Worker Proxy)', () => {
             const mockFile = (name) => ({
                 type: 'application/pdf',
                 name: name,
-                size: 100,
-                arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+                size: 100
             });
 
             pdfService.WorkerPool.enqueue(mockFile('1.pdf'), { onStatus: vi.fn() });
@@ -266,8 +255,8 @@ describe('pdfService (Worker Proxy)', () => {
             workers[1].onmessage({ data: { type: 'ready' } });
 
             await vi.waitFor(() => {
-                expect(workers[0].postMessage).toHaveBeenCalledWith(expect.objectContaining({ name: '1.pdf' }), expect.any(Array));
-                expect(workers[1].postMessage).toHaveBeenCalledWith(expect.objectContaining({ name: '2.pdf' }), expect.any(Array));
+                expect(workers[0].postMessage).toHaveBeenCalledWith(expect.objectContaining({ name: '1.pdf' }));
+                expect(workers[1].postMessage).toHaveBeenCalledWith(expect.objectContaining({ name: '2.pdf' }));
             });
 
             const thirdProcessed = workers.some(w => 

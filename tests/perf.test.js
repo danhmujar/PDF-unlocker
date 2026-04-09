@@ -20,12 +20,14 @@ describe('Phase 1 Performance Benchmarks', () => {
         postMessage(msg) {
             if (msg.type === 'process') {
                 // Simulate processing time proportional to "file" size
-                const delay = msg.file.byteLength / 1000; // 1ms per KB
+                // File objects have .size, ArrayBuffers had .byteLength
+                const fileSize = msg.file.size || 1024;
+                const delay = fileSize / 1000; // 1ms per KB
                 setTimeout(() => {
                     this.onmessage({ 
                         data: { 
                             type: 'success', 
-                            blob: new ArrayBuffer(msg.file.byteLength), 
+                            blob: new ArrayBuffer(fileSize), 
                             name: msg.name 
                         } 
                     });
