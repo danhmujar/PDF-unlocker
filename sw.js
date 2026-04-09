@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pdf-unlocker-v2';
+const CACHE_NAME = 'pdf-unlocker-v3';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -36,6 +36,13 @@ self.addEventListener('activate', (event) => {
         })
     );
     self.clients.claim();
+});
+
+// Handle messages from the client
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
 
 // Fetch Event - Optimized Cache Strategy

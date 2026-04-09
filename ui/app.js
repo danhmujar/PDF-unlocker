@@ -52,7 +52,13 @@ const SVGS = {
     aurora: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>`,
     midnight: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>`,
     frost: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 13l3 3m0 0l3-3m-3 3v-6"></path>`,
-    ember: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.99 7.99 0 0120 13a7.98 7.98 0 01-2.343 5.657z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14l.879 2.121z"></path>`
+    ember: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.99 7.99 0 0120 13a7.98 7.98 0 01-2.343 5.657z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14l.879 2.121z"></path>`,
+    slate: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>`,
+    sage: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>`,
+    steel: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>`,
+    rose: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>`,
+    peach: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path>`,
+    lilac: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>`
 };
 
 // Safe SVG update — avoids innerHTML on the live document to prevent latent XSS vectors
@@ -391,46 +397,109 @@ fileInput.addEventListener('change', function () {
     dropZone.blur();
 });
 
-// --- Theme Toggle Logic ---
-const themeToggle = document.getElementById('theme-toggle');
-const themeIcon = document.getElementById('theme-icon');
+// --- Theme Selection Logic (Vertical HUD) ---
+const themeHud = document.getElementById('theme-hud');
+const themeTrigger = document.getElementById('theme-trigger');
+const themeRibbon = themeHud.querySelector('.theme-ribbon');
 const rootElement = document.documentElement;
-const themes = ['aurora', 'midnight', 'frost', 'ember'];
 
-function setTheme(theme) {
-    rootElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-    if (themeIcon && SVGS[theme]) {
-        setSvgContent(themeIcon, SVGS[theme]);
-    }
+const meshThemes = ['aurora', 'midnight', 'frost', 'ember'];
+const themeDefinitions = [
+    { id: 'aurora', label: 'Aurora', group: 'mesh' },
+    { id: 'midnight', label: 'Midnight', group: 'mesh' },
+    { id: 'frost', label: 'Frost', group: 'mesh' },
+    { id: 'ember', label: 'Ember', group: 'mesh' },
+    { id: 'slate', label: 'Slate Blue', group: 'masculine' },
+    { id: 'sage', label: 'Sage Green', group: 'masculine' },
+    { id: 'steel', label: 'Steel Gray', group: 'masculine' },
+    { id: 'rose', label: 'Dusty Rose', group: 'feminine' },
+    { id: 'peach', label: 'Soft Peach', group: 'feminine' },
+    { id: 'lilac', label: 'Gentle Lilac', group: 'feminine' }
+];
+
+let hudTimer;
+
+function resetHudTimer() {
+    clearTimeout(hudTimer);
+    hudTimer = setTimeout(() => {
+        themeHud.classList.remove('expanded');
+    }, 5000);
 }
 
-const savedTheme = localStorage.getItem('theme');
-const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-let currentThemePref = savedTheme;
-if (!currentThemePref) {
-    currentThemePref = systemPrefersDark ? 'midnight' : 'aurora';
-} else if (currentThemePref === 'dark') {
-    currentThemePref = 'midnight';
-} else if (currentThemePref === 'light') {
-    currentThemePref = 'aurora';
-}
-
-setTheme(currentThemePref);
-
-themeToggle.addEventListener('click', () => {
-    const activeTheme = rootElement.getAttribute('data-theme') || 'aurora';
-    const currentIndex = themes.indexOf(activeTheme);
-    const nextIndex = (currentIndex + 1) % themes.length;
-    const nextTheme = themes[nextIndex];
+function setTheme(themeId) {
+    rootElement.setAttribute('data-theme', themeId);
+    localStorage.setItem('theme', themeId);
     
-    if (document.startViewTransition) {
-        document.startViewTransition(() => setTheme(nextTheme));
+    // Toggle solid-bg class on body
+    if (!meshThemes.includes(themeId)) {
+        document.body.classList.add('solid-bg');
     } else {
-        setTheme(nextTheme);
+        document.body.classList.remove('solid-bg');
     }
-});
+
+    // Update active swatch
+    document.querySelectorAll('.theme-swatch').forEach(sw => {
+        sw.classList.toggle('active', sw.dataset.id === themeId);
+    });
+
+    // Auto-hide HUD after selection
+    themeHud.classList.remove('expanded');
+}
+
+// Generate Swatches
+function initThemeHud() {
+    themeRibbon.innerHTML = '';
+    themeDefinitions.forEach(theme => {
+        const swatch = document.createElement('div');
+        swatch.className = 'theme-swatch';
+        swatch.dataset.id = theme.id;
+        swatch.dataset.label = theme.label;
+        
+        // Inline styles for swatch colors (fallback to theme vars if needed)
+        // Note: In a real app we'd grab these from a config or computed style
+        const svgIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svgIcon.setAttribute("viewBox", "0 0 24 24");
+        svgIcon.setAttribute("fill", "none");
+        svgIcon.setAttribute("stroke", "currentColor");
+        setSvgContent(svgIcon, SVGS[theme.id]);
+        
+        swatch.appendChild(svgIcon);
+        
+        swatch.addEventListener('click', () => {
+            if (document.startViewTransition) {
+                document.startViewTransition(() => setTheme(theme.id));
+            } else {
+                setTheme(theme.id);
+            }
+        });
+
+        themeRibbon.appendChild(swatch);
+    });
+
+    // HUD Interactions
+    themeTrigger.addEventListener('click', () => {
+        themeHud.classList.toggle('expanded');
+        if (themeHud.classList.contains('expanded')) resetHudTimer();
+    });
+
+    themeHud.addEventListener('mouseenter', () => clearTimeout(hudTimer));
+    themeHud.addEventListener('mouseleave', () => {
+        if (themeHud.classList.contains('expanded')) resetHudTimer();
+    });
+
+    // Initial load
+    const savedTheme = localStorage.getItem('theme');
+    let initialTheme = savedTheme || 'aurora';
+    
+    // Legacy support
+    if (initialTheme === 'dark') initialTheme = 'midnight';
+    if (initialTheme === 'light') initialTheme = 'aurora';
+
+    setTheme(initialTheme);
+    resetHudTimer();
+}
+
+initThemeHud();
 
 // --- Modal About Toggle Logic ---
 const aboutToggle = document.getElementById('about-toggle');
@@ -486,3 +555,20 @@ document.addEventListener('keydown', (e) => {
         }
     }
 });
+
+// --- Connectivity Monitoring ---
+const offlineIndicator = document.getElementById('offline-indicator');
+
+function updateOnlineStatus() {
+    if (navigator.onLine) {
+        offlineIndicator.classList.add('hidden');
+    } else {
+        offlineIndicator.classList.remove('hidden');
+    }
+}
+
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+// Initial check
+updateOnlineStatus();
