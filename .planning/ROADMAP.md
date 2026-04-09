@@ -1,7 +1,7 @@
 # 🗺️ Project Roadmap - PDF Unlocker v2.0
 
 ## 🚦 Status Summary
-- **Phase 1 (Optimization):** 🛠️ Planned (4 plans)
+- **Phase 1 (Optimization):** 🛠️ Planned (5 plans)
 - **Phase 2 (UX Polish):** ⏳ Upcoming
 - **Phase 3 (Enterprise):** ⏳ Backlog
 
@@ -10,18 +10,18 @@
 ## Phase 1: Engine Optimization & Worker Migration 🛠️
 **Goal:** Remove main-thread blocking and provide instant feedback during engine bootstrap.
 
-**Plans:** 4 plans
+**Plans:** 1/5 plans executed
 
-- [ ] 01-01-PLAN.md — Web Worker Infrastructure & Foundation
+- [x] 01-01-PLAN.md — Web Worker Infrastructure & Foundation
 - [ ] 01-02-PLAN.md — Streaming WASM Loading & SRI
 - [ ] 01-03-PLAN.md — UI Engine Ready State & SW Cache Optimization
 - [ ] 01-04-PLAN.md — Performance Benchmarking & Integration
+- [ ] 01-05-PLAN.md — Main Thread Proxy & UI Integration
 
 ### ✅ Tasks
-- [ ] **1.1 Web Worker Infrastructure** (Plan 01)
-    - [ ] Create `services/pdfWorker.js`.
-    - [ ] Refactor `pdfService.js` to act as a light wrapper (Proxy/Client) for the Worker.
-    - [ ] Handle message passing (Blob transfer vs. copying).
+- [x] **1.1 Web Worker Infrastructure** (Plan 01)
+    - [x] Create `services/pdfWorker.js`.
+    - [x] Implement core worker logic (message handling, QPDF calls).
 - [ ] **1.2 Streaming WASM Loading** (Plan 02)
     - [ ] Refactor `initWasm` to use `WebAssembly.instantiateStreaming`.
     - [ ] Implement robust error handling for CSP and network failures in the Worker context.
@@ -32,6 +32,9 @@
     - [ ] Update `sw.js` fetch listener to prioritize Cache-First for `.wasm` and `.js` dependencies.
 - [ ] **1.5 Performance Benchmarking** (Plan 04)
     - [ ] Create a benchmark script `tests/perf_test.js` to compare V1 vs V2 engine performance.
+- [ ] **1.6 Main Thread Proxy & UI Integration** (Plan 05)
+    - [ ] Refactor `pdfService.js` to act as a light wrapper (Proxy/Client) for the Worker.
+    - [ ] Handle message passing (Blob transfer vs. copying).
 
 ### 🏁 Success Criteria
 - Engine initializes < 500ms on repeat visits (cached).
