@@ -125,9 +125,9 @@ test.describe('Phase 2-03: Advanced ZIP Options & Post-Processing', () => {
         // Mock large file size
         await page.evaluate(() => {
             window.pdfService.WorkerPool.enqueue = async (file, callbacks, config) => {
-                // Return a large blob (151MB)
-                const largeContent = new Uint8Array(151 * 1024 * 1024);
-                return new Blob([largeContent], { type: 'application/pdf' });
+                // Return a "large" blob mock (1.1GB)
+                // We use a simple object that looks like a Blob for the size check
+                return { size: 1.1 * 1024 * 1024 * 1024, type: 'application/pdf' };
             };
         });
 
@@ -135,7 +135,7 @@ test.describe('Phase 2-03: Advanced ZIP Options & Post-Processing', () => {
         const pdf2 = { name: 'file2.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%file2') };
         await page.setInputFiles('#file-input', [pdf1, pdf2]);
 
-        await expect(page.locator('.batch-complete-overlay')).toBeVisible();
+        await expect(page.locator('.batch-complete-overlay')).toBeVisible({ timeout: 10000 });
         
         const zipBtn = page.locator('#download-zip-btn');
         await expect(zipBtn).toBeDisabled();

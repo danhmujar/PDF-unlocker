@@ -33,7 +33,7 @@ describe('batchService', () => {
         const largeBlob = { size: batchService.MAX_ZIP_SIZE_BYTES + 1 };
         const files = [{ name: 'large.pdf', blob: largeBlob }];
 
-        await expect(batchService.packageAsZip(files)).rejects.toThrow(/exceeds 150MB limit/);
+        await expect(batchService.packageAsZip(files)).rejects.toThrow(/exceeds 1GB limit/);
     });
 
     it('should process files individually with a throttle', async () => {
