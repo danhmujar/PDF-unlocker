@@ -6,8 +6,8 @@
  * Part of Phase 1: Engine Optimization.
  */
 
-// Import the QPDF WASM wrapper from unpkg
-importScripts('https://unpkg.com/@neslinesli93/qpdf-wasm@0.3.0/dist/qpdf.js');
+// Import the QPDF WASM wrapper from local vendor directory
+importScripts('../assets/vendor/qpdf/qpdf.js');
 
 let qpdfModule = null;
 
@@ -28,7 +28,7 @@ async function initWasm() {
             sub: 'Loading WebAssembly core...' 
         });
 
-        const wasmUrl = 'https://unpkg.com/@neslinesli93/qpdf-wasm@0.3.0/dist/qpdf.wasm';
+        const wasmUrl = '../assets/vendor/qpdf/qpdf.wasm';
         const sriHash = 'sha384-9ESKDLiqwqZ9ln5RdWhoE5TM/zLYG2UoW/AMa0KeND/fhDO5ZJsRH6FTJ3Dera+p';
 
         // Use a promise to track instantiation status
@@ -61,7 +61,7 @@ async function initWasm() {
                         } else if (error.name === 'CompileError' || error.name === 'EvalError') {
                             errorMsg = 'Security Error: WASM execution blocked (check CSP).';
                         } else if (error.message.includes('fetch') || !navigator.onLine) {
-                            errorMsg = 'Network Error: Check your internet connection.';
+                            errorMsg = 'Network Error: Check your connection.';
                         }
 
                         console.error("Worker: WASM init error:", error);
@@ -74,7 +74,7 @@ async function initWasm() {
                     });
                 return {}; // Indicates async instantiation to Emscripten
             },
-            locateFile: (path) => `https://unpkg.com/@neslinesli93/qpdf-wasm@0.3.0/dist/${path}`,
+            locateFile: (path) => `../assets/vendor/qpdf/${path}`,
             print: (text) => console.log('Worker stdout:', text),
             printErr: (text) => console.error('Worker stderr:', text)
         });
