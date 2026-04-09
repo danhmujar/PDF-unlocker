@@ -1,67 +1,150 @@
 /**
- * PDF Processing Service Layer
- * Handles WASM initialization, PDF validation, decryption, and secure download.
+ * PDF Processing Service Layer (Worker Proxy)
+ * Acts as a lightweight client for the background pdfWorker.
  */
 
-/* global Module */
-
 window.pdfService = (function () {
-    let qpdfModule = null;
+    let worker = null;
     let isProcessing = false;
     let wasmSupportStatus = 'pending'; // 'pending' | 'supported' | 'blocked'
+    
+    // Internal state for managing async worker responses
+    let initResolver = null;
+    let processResolver = null;
+    let currentCallbacks = null;
+    let currentConfig = null;
 
     const MAX_FILE_SIZE_MB = 100;
     const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
     /**
-     * Initialize the QPDF WebAssembly module.
-     * Idempotent — safe to call multiple times.
+     * Initialize the Web Worker and the underlying WASM engine.
      */
     async function initWasm() {
-        if (qpdfModule) return;
-        try {
-            if (typeof Module !== 'function') {
-                throw new Error("QPDF engine failed to load. Please check your internet connection.");
-            }
-
-            // Fetch WASM manually to enforce Subresource Integrity (SRI)
-            const wasmResponse = await fetch('https://unpkg.com/@neslinesli93/qpdf-wasm@0.3.0/dist/qpdf.wasm', {
-                integrity: 'sha384-9ESKDLiqwqZ9ln5RdWhoE5TM/zLYG2UoW/AMa0KeND/fhDO5ZJsRH6FTJ3Dera+p'
-            });
-            const wasmBinary = await wasmResponse.arrayBuffer();
-
-            qpdfModule = await Module({
-                wasmBinary: wasmBinary,
-                locateFile: (path) => `https://unpkg.com/@neslinesli93/qpdf-wasm@0.3.0/dist/${path}`,
-                print: function (text) { console.log('stdout:', text); },
-                printErr: function (text) { console.error('stderr:', text); }
-            });
-            wasmSupportStatus = 'supported';
-            console.log("QPDF WASM initialized successfully.");
-        } catch (error) {
-            // Detect CSP or WASM compilation blocking
-            if (error.name === 'CompileError' || 
-                error.message.includes('wasm-unsafe-eval') || 
-                error.message.includes('Content Security Policy')) {
+        if (wasmSupportStatus === 'supported' && worker) return;
+        
+        return new Promise((resolve, reject) => {
+            try {
+                if (!worker) {
+                    worker = new Worker('services/pdfWorker.js');
+                    setupWorkerListeners();
+                }
+                
+                initResolver = resolve;
+                worker.postMessage({ type: 'init' });
+            } catch (error) {
                 wasmSupportStatus = 'blocked';
+                console.error("Failed to initialize PDF Worker:", error);
+                reject(error);
             }
-            console.error("Failed to initialize QPDF WASM module:", error);
-            throw error;
-        }
+        });
     }
 
     /**
-     * Validate and decrypt a PDF file, then trigger a browser download.
+     * Set up message routing from the worker back to the main thread.
+     */
+    function setupWorkerListeners() {
+        worker.onmessage = (e) => {
+            const { type, state, main, sub, blob, name } = e.data;
+
+            switch (type) {
+                case 'ready':
+                    wasmSupportStatus = 'supported';
+                    if (initResolver) {
+                        initResolver();
+                        initResolver = null;
+                    }
+                    break;
+
+                case 'status':
+                    if (currentCallbacks?.onStatus) {
+                        currentCallbacks.onStatus(state, main, sub);
+                    }
+                    break;
+
+                case 'success':
+                    handleSuccess(blob, name);
+                    break;
+
+                case 'error':
+                    handleError(main, sub);
+                    break;
+            }
+        };
+
+        worker.onerror = (error) => {
+            console.error("Worker error:", error);
+            handleError('Worker Error', 'A background processing error occurred.');
+        };
+    }
+
+    /**
+     * Internal handler for successful processing.
+     */
+    function handleSuccess(outputBuffer, fileName) {
+        const outputBlob = new Blob([outputBuffer], { type: "application/pdf" });
+        const nameWithoutExt = fileName.toLowerCase().endsWith('.pdf') ? fileName.slice(0, -4) : fileName;
+        const newFilename = `${nameWithoutExt}_unlocked.pdf`;
+
+        if (currentConfig?.returnBlob) {
+            if (processResolver) {
+                processResolver(outputBlob);
+            }
+        } else {
+            // Auto-download on the main thread
+            const url = URL.createObjectURL(outputBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = newFilename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            if (currentCallbacks?.onStatus) {
+                currentCallbacks.onStatus('success', 'Success! Downloading...', `${newFilename} is ready.`);
+            }
+            if (processResolver) processResolver(null);
+        }
+
+        cleanupProcessing();
+    }
+
+    /**
+     * Internal handler for processing errors.
+     */
+    function handleError(main, sub) {
+        if (currentCallbacks?.onStatus) {
+            currentCallbacks.onStatus('error', main, sub);
+        }
+        if (processResolver) processResolver(null);
+        cleanupProcessing();
+    }
+
+    /**
+     * Reset processing state and clear UI references.
+     */
+    function cleanupProcessing() {
+        isProcessing = false;
+        if (currentCallbacks?.fileInput) {
+            currentCallbacks.fileInput.value = '';
+        }
+        processResolver = null;
+        currentCallbacks = null;
+        currentConfig = null;
+    }
+
+    /**
+     * Validate and proxy the PDF file to the worker for decryption.
      * @param {File} file - The PDF file to process.
      * @param {object} callbacks - UI callback functions.
-     * @param {function} callbacks.onStatus - Called with (state, mainText, subText).
-     * @param {HTMLInputElement} callbacks.fileInput - The file input element to clear.
      * @param {object} config - Configuration options.
-     * @param {boolean} config.returnBlob - Whether to return the file Blob instead of auto-downloading.
-     * @returns {Promise<Blob|null>} Resolves with the Blob if returnBlob is true, otherwise null.
+     * @returns {Promise<Blob|null>}
      */
     async function processFile(file, callbacks, config = { returnBlob: false }) {
-        const { onStatus, fileInput } = callbacks;
+        if (isProcessing) return null;
+
+        const { onStatus } = callbacks;
 
         if (wasmSupportStatus === 'blocked') {
             onStatus('error', 'Browser Restricted', 'Your browser or organization security policy blocks WebAssembly.');
@@ -78,75 +161,29 @@ window.pdfService = (function () {
             return null;
         }
 
-        if (isProcessing) return null;
         isProcessing = true;
-        onStatus('processing', 'Unlocking locally...', 'Parsing structure and removing restrictions securely.');
+        currentCallbacks = callbacks;
+        currentConfig = config;
 
         try {
-            if (!qpdfModule) await initWasm();
+            if (!worker) await initWasm();
 
             const fileBuffer = await file.arrayBuffer();
-            const uint8Array = new Uint8Array(fileBuffer);
-
-            // Magic-byte validation: PDF files must start with %PDF
-            if (uint8Array.length < 4 ||
-                uint8Array[0] !== 0x25 || uint8Array[1] !== 0x50 ||
-                uint8Array[2] !== 0x44 || uint8Array[3] !== 0x46) {
-                onStatus('error', 'Invalid PDF', 'File header does not match a valid PDF signature.');
-                isProcessing = false;
-                fileInput.value = '';
-                return null;
-            }
-
-            const inputName = `input_${Date.now()}.pdf`;
-            const outputName = `output_${Date.now()}.pdf`;
-
-            qpdfModule.FS.writeFile(inputName, uint8Array);
-            // Zero the source buffer after writing to WASM FS
-            uint8Array.fill(0);
-
-            qpdfModule.callMain(["--decrypt", inputName, outputName]);
-            const outputFile = qpdfModule.FS.readFile(outputName);
-
-            // Reliable WASM FS cleanup with verification
-            try {
-                qpdfModule.FS.unlink(inputName);
-            } catch (e) { console.warn('FS cleanup (input) failed:', e); }
-            try {
-                qpdfModule.FS.unlink(outputName);
-            } catch (e) { console.warn('FS cleanup (output) failed:', e); }
-
-            const outputBlob = new Blob([outputFile], { type: "application/pdf" });
-
-            const originalName = file.name;
-            const nameWithoutExt = originalName.toLowerCase().endsWith('.pdf') ? originalName.slice(0, -4) : originalName;
-            const newFilename = `${nameWithoutExt}_unlocked.pdf`;
-
-            if (config.returnBlob) {
-                // Hand the Blob back to the queue manager for Zipping
-                return outputBlob;
-            } else {
-                // Fallback: Individual auto-download to save RAM
-                const url = URL.createObjectURL(outputBlob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = newFilename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-
-                onStatus('success', 'Success! Downloading...', `${newFilename} is ready.`);
-                return null;
-            }
+            
+            return new Promise((resolve) => {
+                processResolver = resolve;
+                // Transfer ownership of the buffer to the worker (zero-copy)
+                worker.postMessage({ 
+                    type: 'process', 
+                    file: fileBuffer, 
+                    name: file.name 
+                }, [fileBuffer]);
+            });
 
         } catch (error) {
-            console.error("PDF Processing error:", error);
-            onStatus('error', 'Processing Failed', 'The document appears to be corrupted or too heavily encrypted.');
+            console.error("Proxy: Processing error:", error);
+            handleError('Processing Failed', 'Could not communicate with the background engine.');
             return null;
-        } finally {
-            isProcessing = false;
-            fileInput.value = '';
         }
     }
 
@@ -157,3 +194,4 @@ window.pdfService = (function () {
         get wasmSupportStatus() { return wasmSupportStatus; }
     };
 })();
+

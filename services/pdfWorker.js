@@ -28,27 +28,71 @@ async function initWasm() {
             sub: 'Loading WebAssembly core...' 
         });
 
-        // Fetch WASM manually. SRI is planned for Plan 02.
-        const wasmResponse = await fetch('https://unpkg.com/@neslinesli93/qpdf-wasm@0.3.0/dist/qpdf.wasm');
-        if (!wasmResponse.ok) throw new Error('Failed to fetch WASM binary');
-        
-        const wasmBinary = await wasmResponse.arrayBuffer();
+        const wasmUrl = 'https://unpkg.com/@neslinesli93/qpdf-wasm@0.3.0/dist/qpdf.wasm';
+        const sriHash = 'sha384-9ESKDLiqwqZ9ln5RdWhoE5TM/zLYG2UoW/AMa0KeND/fhDO5ZJsRH6FTJ3Dera+p';
+
+        // Use a promise to track instantiation status
+        let resolveInit;
+        let rejectInit;
+        const initPromise = new Promise((resolve, reject) => {
+            resolveInit = resolve;
+            rejectInit = reject;
+        });
 
         qpdfModule = await Module({
-            wasmBinary: wasmBinary,
+            /**
+             * Optimized instantiation using streaming and SRI.
+             * This overrides Emscripten's default fetch logic.
+             */
+            instantiateWasm: (info, receiveInstance) => {
+                fetch(wasmUrl, { integrity: sriHash })
+                    .then(response => {
+                        if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+                        return WebAssembly.instantiateStreaming(response, info);
+                    })
+                    .then(result => {
+                        receiveInstance(result.instance);
+                        resolveInit(); // Signal success to initWasm
+                    })
+                    .catch(error => {
+                        let errorMsg = 'Failed to load PDF engine.';
+                        if (error instanceof TypeError && error.message.includes('integrity')) {
+                            errorMsg = 'Security Error: WASM binary integrity check failed.';
+                        } else if (error.name === 'CompileError' || error.name === 'EvalError') {
+                            errorMsg = 'Security Error: WASM execution blocked (check CSP).';
+                        } else if (error.message.includes('fetch') || !navigator.onLine) {
+                            errorMsg = 'Network Error: Check your internet connection.';
+                        }
+
+                        console.error("Worker: WASM init error:", error);
+                        self.postMessage({ 
+                            type: 'error', 
+                            main: 'Engine Error', 
+                            sub: errorMsg 
+                        });
+                        rejectInit(new Error(errorMsg)); // Signal failure to initWasm
+                    });
+                return {}; // Indicates async instantiation to Emscripten
+            },
             locateFile: (path) => `https://unpkg.com/@neslinesli93/qpdf-wasm@0.3.0/dist/${path}`,
             print: (text) => console.log('Worker stdout:', text),
             printErr: (text) => console.error('Worker stderr:', text)
         });
 
+        // Wait for instantiateWasm to actually finish
+        await initPromise;
+
         self.postMessage({ type: 'ready' });
     } catch (error) {
         console.error("Worker: Failed to initialize QPDF WASM:", error);
-        self.postMessage({ 
-            type: 'error', 
-            main: 'Engine Error', 
-            sub: 'Failed to initialize the PDF processing engine.' 
-        });
+        // Avoid sending duplicate error if already sent in instantiateWasm
+        if (!qpdfModule) {
+            self.postMessage({ 
+                type: 'error', 
+                main: 'Engine Error', 
+                sub: 'Failed to initialize the PDF processing engine.' 
+            });
+        }
     }
 }
 

@@ -10,10 +10,10 @@
 ## Phase 1: Engine Optimization & Worker Migration 🛠️
 **Goal:** Remove main-thread blocking and provide instant feedback during engine bootstrap.
 
-**Plans:** 1/5 plans executed
+**Plans:** 2/5 plans executed
 
 - [x] 01-01-PLAN.md — Web Worker Infrastructure & Foundation
-- [ ] 01-02-PLAN.md — Streaming WASM Loading & SRI
+- [x] 01-02-PLAN.md — Streaming WASM Loading & SRI
 - [ ] 01-03-PLAN.md — UI Engine Ready State & SW Cache Optimization
 - [ ] 01-04-PLAN.md — Performance Benchmarking & Integration
 - [ ] 01-05-PLAN.md — Main Thread Proxy & UI Integration
@@ -22,9 +22,9 @@
 - [x] **1.1 Web Worker Infrastructure** (Plan 01)
     - [x] Create `services/pdfWorker.js`.
     - [x] Implement core worker logic (message handling, QPDF calls).
-- [ ] **1.2 Streaming WASM Loading** (Plan 02)
-    - [ ] Refactor `initWasm` to use `WebAssembly.instantiateStreaming`.
-    - [ ] Implement robust error handling for CSP and network failures in the Worker context.
+- [x] **1.2 Streaming WASM Loading** (Plan 02)
+    - [x] Refactor `initWasm` to use `WebAssembly.instantiateStreaming`.
+    - [x] Implement robust error handling for CSP and network failures in the Worker context.
 - [ ] **1.3 UI State Management** (Plan 03)
     - [ ] Implement "Engine Loading" UI state in `ui/app.js`.
     - [ ] Transition state only after the Worker signals a "READY" event.

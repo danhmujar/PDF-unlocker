@@ -1,0 +1,15 @@
+{
+  "workflow": {
+    "phases": true,
+    "automatic_validation": true,
+    "require_tests": true,
+    "planning_scope": "Full-Scale",
+    "tone": "senior-engineer"
+  },
+  "project": {
+    "name": "PDF Unlocker",
+    "stack": ["Vanilla JS", "WASM", "Web Workers", "PWA"],
+    "architecture": "3-Tier (Logic in Worker)",
+    "version": "2.0.0-dev"
+  }
+}

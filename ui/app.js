@@ -14,15 +14,63 @@ const subStatusText = document.getElementById('sub-status-text');
 const statusIcon = document.getElementById('status-icon');
 const spinner = document.getElementById('spinner');
 
-// --- WASM Bootstrap ---
-pdfService.initWasm().catch(err => {
-    console.error("Initialization error:", err);
-    if (pdfService.wasmSupportStatus === 'blocked') {
-        updateStatus('error', 'Browser Restricted', 'Your security policy blocks WebAssembly. Please try a different browser.');
-    } else {
-        updateStatus('error', 'Initialization Error', 'Failed to load the engine. Please check your connection and reload.');
+// --- Worker & Engine State ---
+let pdfWorker = null;
+let isEngineReady = false;
+
+function initEngine() {
+    updateStatus('loading', 'Loading engine...', 'Preparing local environment');
+    
+    try {
+        pdfWorker = new Worker('services/pdfWorker.js');
+        
+        pdfWorker.onmessage = (e) => {
+            const { type, state, main, sub, blob, name } = e.data;
+            
+            switch (type) {
+                case 'ready':
+                    isEngineReady = true;
+                    updateStatus('default', 'Awaiting Document', 'Drag & drop protected PDFs here, or click to browse');
+                    break;
+                    
+                case 'status':
+                    // Map worker status to UI updates
+                    updateStatus(state, main, sub);
+                    break;
+                    
+                case 'success':
+                    handleWorkerSuccess(blob, name);
+                    break;
+                    
+                case 'error':
+                    if (!isEngineReady) {
+                        updateStatus('error', 'Engine Initialization Failed', sub);
+                    } else {
+                        updateStatus('error', main, sub);
+                    }
+                    isEngineReady = false; // Block interaction on fatal error
+                    break;
+            }
+        };
+
+        pdfWorker.onerror = (err) => {
+            console.error("Worker Error:", err);
+            isEngineReady = false;
+            updateStatus('error', 'Engine Error', 'Failed to start background processor. Please reload.');
+        };
+
+        // Trigger worker initialization
+        pdfWorker.postMessage({ type: 'init' });
+
+    } catch (err) {
+        console.error("Worker initialization failed:", err);
+        isEngineReady = false;
+        updateStatus('error', 'Browser Restricted', 'Your browser does not support background processing (WebWorkers).');
     }
-});
+}
+
+// Initial engine bootstrap
+initEngine();
 
 // --- Async Font Swap (CSP-safe alternative to inline onload) ---
 const fontLink = document.getElementById('google-fonts');
@@ -60,14 +108,14 @@ function updateStatus(state, mainText, subText) {
     subStatusText.textContent = subText;
 
     // Manage ARIA attributes for screen readers
-    dropZone.setAttribute('aria-busy', state === 'processing' ? 'true' : 'false');
+    dropZone.setAttribute('aria-busy', (state === 'processing' || state === 'loading') ? 'true' : 'false');
 
     dropZone.className = 'drop-zone';
     spinner.classList.remove('visible');
     statusIcon.classList.remove('hidden');
 
-    if (state === 'processing') {
-        dropZone.classList.add('processing');
+    if (state === 'processing' || state === 'loading') {
+        dropZone.classList.add(state); // adds .processing or .loading
         spinner.classList.add('visible');
         statusIcon.classList.add('hidden');
     } else if (state === 'success') {
@@ -84,8 +132,8 @@ function updateStatus(state, mainText, subText) {
 function resetState() {
     setTimeout(() => {
         // Guard: only reset if the service layer and queue are no longer processing
-        // and WASM is actually supported
-        if (!pdfService.isProcessing && !isQueueRunning && pdfService.wasmSupportStatus !== 'blocked') {
+        // and engine is ready
+        if (!isQueueRunning && isEngineReady) {
             updateStatus('default', 'Awaiting Document', 'Drag & drop protected PDFs here, or click to browse');
         }
     }, 6000);
@@ -94,63 +142,95 @@ function resetState() {
 const MAX_BATCH_FILES = 20;
 let fileQueue = [];
 let isQueueRunning = false;
-
-// --- Callbacks object passed to the service layer ---
-const serviceCallbacks = {
-    onStatus: (state, mainText, subText) => {
-        // Only update the main UI text if we aren't in the middle of a queue
-        // The queue manager handles the 'Unlocking (x/y)...' text
-        if (state !== 'processing') {
-            updateStatus(state, mainText, subText);
-        } else {
-            // For processing state, just spin the UI but let the queue manager set the text
-            updateStatus('processing', statusText.textContent, subStatusText.textContent);
-        }
-    },
-    fileInput: fileInput
-};
+let currentBatchZip = null;
+let currentBatchTotal = 0;
+let currentBatchProcessed = 0;
+let currentBatchSuccessful = 0;
 
 const ZIP_MEMORY_LIMIT_MB = 150;
 const ZIP_MEMORY_LIMIT_BYTES = ZIP_MEMORY_LIMIT_MB * 1024 * 1024;
 
 // --- Queue Manager ---
 async function processQueue() {
-    if (isQueueRunning) return;
+    if (isQueueRunning || !isEngineReady) return;
     isQueueRunning = true;
 
-    const totalFilesThisBatch = fileQueue.length;
-    let currentProcessed = 0;
+    currentBatchTotal = fileQueue.length;
+    currentBatchProcessed = 0;
+    currentBatchSuccessful = 0;
 
     // Calculate total size to determine if we can safely zip in RAM
     const totalBatchSize = fileQueue.reduce((acc, f) => acc + f.size, 0);
-    // Use ZIP only if memory is under threshold and there is more than 1 file
-    const useZip = (totalBatchSize < ZIP_MEMORY_LIMIT_BYTES) && (totalFilesThisBatch > 1);
+    const useZip = (totalBatchSize < ZIP_MEMORY_LIMIT_BYTES) && (currentBatchTotal > 1);
 
-    let zip = useZip ? new JSZip() : null;
-    let successfulBlobs = 0;
+    currentBatchZip = useZip ? new JSZip() : null;
 
-    while (fileQueue.length > 0) {
-        const currentFile = fileQueue.shift();
-        currentProcessed++;
+    nextInQueue();
+}
 
-        // Update UI to show progress
-        updateStatus('processing', `Unlocking (${currentProcessed}/${totalFilesThisBatch})...`, `Processing: ${currentFile.name}`);
-
-        // Await the file processing. Returns Blob if useZip is true, else null.
-        const blob = await pdfService.processFile(currentFile, serviceCallbacks, { returnBlob: useZip });
-
-        if (useZip && blob) {
-            const originalName = currentFile.name;
-            const nameWithoutExt = originalName.toLowerCase().endsWith('.pdf') ? originalName.slice(0, -4) : originalName;
-            zip.file(`${nameWithoutExt}_unlocked.pdf`, blob);
-            successfulBlobs++;
-        }
+function nextInQueue() {
+    if (fileQueue.length === 0) {
+        finalizeBatch();
+        return;
     }
 
-    if (useZip && successfulBlobs > 0) {
+    const currentFile = fileQueue.shift();
+    currentBatchProcessed++;
+
+    // Update UI to show progress
+    updateStatus('processing', `Unlocking (${currentBatchProcessed}/${currentBatchTotal})...`, `Processing: ${currentFile.name}`);
+
+    // Read file as ArrayBuffer for the worker
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const buffer = e.target.result;
+        pdfWorker.postMessage({ 
+            type: 'process', 
+            file: buffer, 
+            name: currentFile.name 
+        }, [buffer]); // Transfer buffer for performance
+    };
+    reader.onerror = () => {
+        updateStatus('error', 'Read Error', `Failed to read ${currentFile.name}`);
+        nextInQueue();
+    };
+    reader.readAsArrayBuffer(currentFile);
+}
+
+function handleWorkerSuccess(buffer, originalName) {
+    currentBatchSuccessful++;
+    const blob = new Blob([buffer], { type: "application/pdf" });
+    const nameWithoutExt = originalName.toLowerCase().endsWith('.pdf') ? originalName.slice(0, -4) : originalName;
+    const newFilename = `${nameWithoutExt}_unlocked.pdf`;
+
+    if (currentBatchZip) {
+        currentBatchZip.file(newFilename, blob);
+        nextInQueue();
+    } else {
+        // Individual auto-download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = newFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        if (currentBatchTotal === 1) {
+            updateStatus('success', 'Success! Downloading...', `${newFilename} is ready.`);
+            finalizeBatch();
+        } else {
+            nextInQueue();
+        }
+    }
+}
+
+async function finalizeBatch() {
+    if (currentBatchZip && currentBatchSuccessful > 0) {
         updateStatus('processing', 'Compressing files...', 'Building your ZIP archive securely in memory.');
         try {
-            const zipBlob = await zip.generateAsync({ type: "blob" });
+            const zipBlob = await currentBatchZip.generateAsync({ type: "blob" });
             const url = URL.createObjectURL(zipBlob);
             const a = document.createElement('a');
             a.href = url;
@@ -167,10 +247,8 @@ async function processQueue() {
     }
 
     isQueueRunning = false;
-    // Delay slightly to let the last success message show
-    setTimeout(() => {
-        resetState();
-    }, 4000);
+    currentBatchZip = null;
+    resetState();
 }
 
 // --- Interaction Logic ---
@@ -185,7 +263,7 @@ function preventDefaults(e) {
 
 ['dragenter', 'dragover'].forEach(eventName => {
     dropZone.addEventListener(eventName, () => {
-        if (!pdfService.isProcessing && !isQueueRunning && pdfService.wasmSupportStatus !== 'blocked') dropZone.classList.add('dragover');
+        if (isEngineReady && !isQueueRunning) dropZone.classList.add('dragover');
     }, false);
 });
 
@@ -196,8 +274,8 @@ function preventDefaults(e) {
 });
 
 function queueFiles(fileList) {
-    if (pdfService.wasmSupportStatus === 'blocked') {
-        updateStatus('error', 'Browser Restricted', 'WebAssembly is blocked. Please use a supported browser.');
+    if (!isEngineReady) {
+        updateStatus('error', 'Engine Not Ready', 'Please wait for the engine to finish loading.');
         return;
     }
     const files = Array.from(fileList).filter(f => f.type === "application/pdf");
@@ -223,16 +301,17 @@ dropZone.addEventListener('drop', (e) => {
 });
 
 dropZone.addEventListener('click', () => {
-    if (!pdfService.isProcessing && !isQueueRunning && pdfService.wasmSupportStatus !== 'blocked') fileInput.click();
+    if (isEngineReady && !isQueueRunning) fileInput.click();
 });
 
 // Keyboard accessibility: trigger specific actions on Enter/Space
 dropZone.addEventListener('keydown', (e) => {
-    if ((e.key === 'Enter' || e.key === ' ') && !pdfService.isProcessing && !isQueueRunning && pdfService.wasmSupportStatus !== 'blocked') {
+    if ((e.key === 'Enter' || e.key === ' ') && isEngineReady && !isQueueRunning) {
         preventDefaults(e);
         fileInput.click();
     }
 });
+
 
 fileInput.addEventListener('change', function () {
     if (this.files.length > 0) {

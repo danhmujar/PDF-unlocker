@@ -14,13 +14,29 @@ const pdfWorkerContent = fs.readFileSync(pdfWorkerPath, 'utf8');
 describe('pdfWorker', () => {
     let workerScope;
     let postMessage;
+    let mockModule;
 
     beforeEach(() => {
         // Setup mock worker environment
         postMessage = vi.fn();
         
         // Mock global Module for Emscripten
-        const mockModule = vi.fn();
+        mockModule = vi.fn().mockImplementation(async (options) => {
+            const moduleInstance = mockModule.instance || { 
+                FS: { writeFile: vi.fn(), readFile: vi.fn(), unlink: vi.fn() }, 
+                callMain: vi.fn() 
+            };
+
+            if (options.instantiateWasm) {
+                // Return an object indicating async instantiation to Emscripten
+                // and trigger the underlying WebAssembly promise flow.
+                options.instantiateWasm({}, (instance) => {
+                    // receiveInstance callback
+                });
+            }
+            
+            return moduleInstance;
+        });
         vi.stubGlobal('Module', mockModule);
         
         // Mock global importScripts
@@ -30,6 +46,16 @@ describe('pdfWorker', () => {
         // Mock global fetch
         const mockFetch = vi.fn();
         vi.stubGlobal('fetch', mockFetch);
+
+        // Mock WebAssembly
+        const mockWebAssembly = {
+            instantiateStreaming: vi.fn().mockResolvedValue({ instance: { exports: {} } }),
+            instantiate: vi.fn()
+        };
+        vi.stubGlobal('WebAssembly', mockWebAssembly);
+
+        // Mock navigator
+        vi.stubGlobal('navigator', { onLine: true });
 
         workerScope = {
             postMessage: postMessage,
@@ -43,17 +69,16 @@ describe('pdfWorker', () => {
         };
 
         // Evaluate the worker code in a simulated worker scope
-        // We pass 'self' and other globals to the worker's context
-        const fn = new Function('self', 'importScripts', 'Module', 'fetch', 'Uint8Array', pdfWorkerContent);
-        fn(workerScope, workerScope.importScripts, mockModule, mockFetch, Uint8Array);
+        const fn = new Function('self', 'importScripts', 'Module', 'fetch', 'Uint8Array', 'WebAssembly', 'navigator', pdfWorkerContent);
+        fn(workerScope, workerScope.importScripts, mockModule, mockFetch, Uint8Array, mockWebAssembly, navigator);
     });
 
     it('should initialize WASM successfully', async () => {
         const mockQpdf = { FS: {}, callMain: vi.fn() };
-        global.Module.mockResolvedValue(mockQpdf);
+        mockModule.instance = mockQpdf;
+        
         global.fetch.mockResolvedValue({
-            ok: true,
-            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(10))
+            ok: true
         });
 
         // Trigger init message
@@ -64,23 +89,25 @@ describe('pdfWorker', () => {
             type: 'status', 
             state: 'loading' 
         }));
-        expect(workerScope.importScripts).toHaveBeenCalledWith(expect.stringContaining('qpdf.js'));
+        expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('qpdf.wasm'), expect.objectContaining({ integrity: expect.any(String) }));
     });
 
     it('should handle WASM initialization failure', async () => {
         global.fetch.mockResolvedValue({
-            ok: false
+            ok: false,
+            statusText: 'Not Found'
         });
 
         await workerScope.onmessage({ data: { type: 'init' } });
 
         expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({ 
             type: 'error', 
-            main: 'Engine Error' 
+            main: 'Engine Error'
         }));
     });
 
     it('should reject non-PDF files via magic byte validation', async () => {
+        global.fetch.mockResolvedValue({ ok: true });
         const invalidPdfContent = new Uint8Array([0, 1, 2, 3]).buffer;
 
         await workerScope.onmessage({ 
@@ -106,7 +133,7 @@ describe('pdfWorker', () => {
             },
             callMain: vi.fn()
         };
-        global.Module.mockResolvedValue(mockQpdf);
+        mockModule.instance = mockQpdf;
         global.fetch.mockResolvedValue({
             ok: true,
             arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(10))
@@ -151,7 +178,7 @@ describe('pdfWorker', () => {
             },
             callMain: vi.fn()
         };
-        global.Module.mockResolvedValue(mockQpdf);
+        mockModule.instance = mockQpdf;
         global.fetch.mockResolvedValue({
             ok: true,
             arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(10))

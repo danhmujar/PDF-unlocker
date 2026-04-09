@@ -5,8 +5,9 @@ import path from 'path';
 // Helper to load the script into the test environment
 const pdfServiceContent = fs.readFileSync(path.resolve(__dirname, '../services/pdfService.js'), 'utf8');
 
-describe('pdfService', () => {
+describe('pdfService (Worker Proxy)', () => {
     let pdfService;
+    let mockWorker;
 
     beforeEach(() => {
         // Setup mock environment
@@ -16,8 +17,44 @@ describe('pdfService', () => {
             error: vi.fn(),
         });
 
-        // Evaluate the service code in the current context
-        // This is a way to test the IIFE without changing the source to a module
+        // Mock URL and Blob for browser-only APIs
+        vi.stubGlobal('URL', {
+            createObjectURL: vi.fn().mockReturnValue('blob:mock-url'),
+            revokeObjectURL: vi.fn(),
+        });
+
+        vi.stubGlobal('Blob', class Blob {
+            constructor(parts, options) {
+                this.parts = parts;
+                this.options = options;
+            }
+        });
+
+        // Mock document.createElement for auto-download testing
+        vi.stubGlobal('document', {
+            createElement: vi.fn().mockReturnValue({
+                appendChild: vi.fn(),
+                removeChild: vi.fn(),
+                click: vi.fn(),
+                style: {},
+            }),
+            body: {
+                appendChild: vi.fn(),
+                removeChild: vi.fn(),
+            }
+        });
+
+        // Mock Worker
+        mockWorker = {
+            postMessage: vi.fn(),
+            onmessage: null,
+            onerror: null,
+        };
+        vi.stubGlobal('Worker', vi.fn().mockImplementation(function() {
+            return mockWorker;
+        }));
+
+        // Evaluate the service code
         const mockWindow = {};
         const fn = new Function('window', pdfServiceContent);
         fn(mockWindow);
@@ -50,133 +87,112 @@ describe('pdfService', () => {
         expect(onStatus).toHaveBeenCalledWith('error', 'File Too Large', expect.any(String));
     });
 
-    it('should validate magic bytes', async () => {
-        // Evaluate the service code again to inject dependencies
-        const mockWindow = {};
-        const fn = new Function('window', 'Module', pdfServiceContent);
-        // Inject a dummy Module function and mock qpdfModule
-        const mockQpdf = { FS: { writeFile: vi.fn(), readFile: vi.fn(), unlink: vi.fn() }, callMain: vi.fn() };
-        const mockModule = vi.fn().mockResolvedValue(mockQpdf);
+    it('should initialize worker and send init message', async () => {
+        const initPromise = pdfService.initWasm();
 
-        fn(mockWindow, mockModule);
-        pdfService = mockWindow.pdfService;
+        expect(Worker).toHaveBeenCalledWith('services/pdfWorker.js');
+        expect(mockWorker.postMessage).toHaveBeenCalledWith({ type: 'init' });
 
-        // Manually trigger init to set internal qpdfModule
-        // Actually we can't easily reach the internal qpdfModule.
-        // But we can mock initWasm to set it if we restructure slightly, 
-        // but let's just make initWasm succeed.
+        // Simulate worker becoming ready
+        mockWorker.onmessage({ data: { type: 'ready' } });
 
-        // Mock fetch for wasm
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(0))
-        }));
-
-        await pdfService.initWasm();
-
-        // Mock a file that isn't a PDF by bytes
-        const invalidPdfContent = new Uint8Array([0, 1, 2, 3]).buffer;
-        const mockFile = {
-            type: 'application/pdf',
-            name: 'fake.pdf',
-            size: 100,
-            arrayBuffer: vi.fn().mockResolvedValue(invalidPdfContent)
-        };
-
-        const onStatus = vi.fn();
-        const fileInput = { value: 'something' };
-
-        const result = await pdfService.processFile(mockFile, { onStatus, fileInput });
-
-        expect(result).toBeNull();
-        expect(onStatus).toHaveBeenCalledWith('error', 'Invalid PDF', expect.any(String));
+        await expect(initPromise).resolves.toBeUndefined();
+        expect(pdfService.wasmSupportStatus).toBe('supported');
     });
 
-    it('should successfully process a valid PDF and return a Blob', async () => {
-        const mockWindow = {};
-        const fn = new Function('window', 'Module', pdfServiceContent);
-
-        // Mock a successful QPDF output
-        const mockQpdf = {
-            FS: {
-                writeFile: vi.fn(),
-                readFile: vi.fn().mockReturnValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])), // Mock returning a PDF Blob 
-                unlink: vi.fn()
-            },
-            callMain: vi.fn()
-        };
-        const mockModule = vi.fn().mockResolvedValue(mockQpdf);
-
-        fn(mockWindow, mockModule);
-        pdfService = mockWindow.pdfService;
-
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(0))
-        }));
-
-        vi.stubGlobal('Blob', class Blob {
-            constructor(parts, options) {
-                this.parts = parts;
-                this.options = options;
-            }
-        });
-
-        await pdfService.initWasm();
-
-        // Valid PDF magic bytes
-        const validPdfContent = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x00]).buffer;
-        const mockFile = {
-            type: 'application/pdf',
-            name: 'valid_secure.pdf',
-            size: 100,
-            arrayBuffer: vi.fn().mockResolvedValue(validPdfContent)
-        };
-
+    it('should proxy processFile to worker with Transferables', async () => {
         const onStatus = vi.fn();
         const fileInput = { value: 'something' };
+        const mockBuffer = new ArrayBuffer(8);
+        const mockFile = {
+            type: 'application/pdf',
+            name: 'test.pdf',
+            size: 100,
+            arrayBuffer: vi.fn().mockResolvedValue(mockBuffer)
+        };
 
-        // Test with returnBlob = true
-        const result = await pdfService.processFile(mockFile, { onStatus, fileInput }, { returnBlob: true });
+        // Start processing
+        const processPromise = pdfService.processFile(mockFile, { onStatus, fileInput }, { returnBlob: true });
 
-        expect(mockQpdf.callMain).toHaveBeenCalledWith(["--decrypt", expect.stringMatching(/^input_.*\.pdf$/), expect.stringMatching(/^output_.*\.pdf$/)]);
+        // First call should be init because worker is created lazily
+        expect(mockWorker.postMessage).toHaveBeenCalledWith({ type: 'init' });
+        
+        // Simulate worker ready
+        mockWorker.onmessage({ data: { type: 'ready' } });
+
+        // Wait for the service to proceed to 'process' message
+        await vi.waitFor(() => expect(mockWorker.postMessage).toHaveBeenCalledTimes(2));
+
+        expect(mockWorker.postMessage).toHaveBeenLastCalledWith(
+            { type: 'process', file: mockBuffer, name: 'test.pdf' },
+            [mockBuffer]
+        );
+
+        // Simulate success from worker
+        const outputBuffer = new ArrayBuffer(4);
+        mockWorker.onmessage({ data: { type: 'success', blob: outputBuffer, name: 'test.pdf' } });
+
+        const result = await processPromise;
         expect(result).toBeDefined();
         expect(result.options.type).toBe("application/pdf");
-        expect(onStatus).toHaveBeenCalledWith('processing', 'Unlocking locally...', expect.any(String));
+        expect(pdfService.isProcessing).toBe(false);
     });
 
-    it('should handle WASM processing errors gracefully', async () => {
-        const mockWindow = {};
-        const fn = new Function('window', 'Module', pdfServiceContent);
-
-        // Mock QPDF throwing an error during execution
-        const mockQpdf = {
-            FS: { writeFile: vi.fn(), readFile: vi.fn(), unlink: vi.fn() },
-            callMain: vi.fn().mockImplementation(() => { throw new Error("Decryption failed"); })
+    it('should handle status updates from worker', async () => {
+        const onStatus = vi.fn();
+        const mockFile = {
+            type: 'application/pdf',
+            name: 'test.pdf',
+            size: 100,
+            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
         };
-        const mockModule = vi.fn().mockResolvedValue(mockQpdf);
 
-        fn(mockWindow, mockModule);
-        pdfService = mockWindow.pdfService;
+        pdfService.processFile(mockFile, { onStatus });
+        
+        // Handle lazy init
+        mockWorker.onmessage({ data: { type: 'ready' } });
+        await vi.waitFor(() => expect(mockWorker.postMessage).toHaveBeenCalledTimes(2));
 
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(0))
-        }));
+        // Simulate status update
+        mockWorker.onmessage({ 
+            data: { 
+                type: 'status', 
+                state: 'processing', 
+                main: 'Unlocking...', 
+                sub: 'Step 1' 
+            } 
+        });
 
-        await pdfService.initWasm();
+        expect(onStatus).toHaveBeenCalledWith('processing', 'Unlocking...', 'Step 1');
+    });
 
-        const validPdfContent = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x00]).buffer;
+    it('should handle errors from worker', async () => {
+        const onStatus = vi.fn();
         const mockFile = {
             type: 'application/pdf',
             name: 'corrupt.pdf',
             size: 100,
-            arrayBuffer: vi.fn().mockResolvedValue(validPdfContent)
+            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
         };
 
-        const onStatus = vi.fn();
-        const fileInput = { value: 'something' };
+        const processPromise = pdfService.processFile(mockFile, { onStatus });
+        
+        // Handle lazy init
+        mockWorker.onmessage({ data: { type: 'ready' } });
+        await vi.waitFor(() => expect(mockWorker.postMessage).toHaveBeenCalledTimes(2));
 
-        const result = await pdfService.processFile(mockFile, { onStatus, fileInput });
+        // Simulate error from worker
+        mockWorker.onmessage({ 
+            data: { 
+                type: 'error', 
+                main: 'Failed', 
+                sub: 'Corrupt file' 
+            } 
+        });
 
+        const result = await processPromise;
         expect(result).toBeNull();
-        expect(onStatus).toHaveBeenCalledWith('error', 'Processing Failed', expect.any(String));
+        expect(onStatus).toHaveBeenCalledWith('error', 'Failed', 'Corrupt file');
+        expect(pdfService.isProcessing).toBe(false);
     });
 });
