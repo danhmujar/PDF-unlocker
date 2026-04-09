@@ -723,6 +723,131 @@ input[type="file"] {
     height: 20px;
 }
 
+/* --- Bento Grid & File Cards --- */
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+    width: 100%;
+    margin-top: 2rem;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.file-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+        0 4px 6px -1px rgba(0, 0, 0, 0.05),
+        inset 0 0 0 1px var(--inner-border);
+    view-transition-name: file-card;
+}
+
+.file-card:hover {
+    transform: translateY(-4px);
+    background: var(--card-hover-bg);
+    border-color: var(--card-hover-border);
+    box-shadow: 
+        0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        inset 0 0 0 1px var(--inner-border-hover);
+}
+
+.file-card .file-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.file-card .file-icon {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    color: var(--accent-color);
+}
+
+.file-card .file-name {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-card .file-status {
+    font-size: 0.75rem;
+    color: var(--subtitle-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Status Modifiers */
+.file-card.pending .file-status::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--icon-color);
+    border-radius: 50%;
+}
+
+.file-card.processing .file-status::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.file-card.success {
+    border-color: var(--success-color);
+    background: var(--success-bg);
+}
+
+.file-card.success .file-status {
+    color: var(--success-color);
+}
+
+.file-card.success .file-status::before {
+    content: '✓';
+    font-weight: bold;
+}
+
+.file-card.error {
+    border-color: var(--error-color);
+    background: var(--error-bg);
+}
+
+.file-card.error .file-status {
+    color: var(--error-color);
+}
+
+.file-card.error .file-status::before {
+    content: '!';
+    font-weight: bold;
+}
+
+/* Bento Span Logic for smaller batches */
+@media (min-width: 900px) {
+    .bento-grid:has(.file-card:nth-child(2):last-child) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .bento-grid:has(.file-card:nth-child(1):last-child) {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* --- Responsive Design --- */
 @media (max-width: 600px) {
     body {
