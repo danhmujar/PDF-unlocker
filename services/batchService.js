@@ -5,7 +5,7 @@
  * Strictly decoupled from the DOM.
  */
 
-const MAX_ZIP_SIZE_BYTES = 150 * 1024 * 1024; // 150MB limit
+const MAX_ZIP_SIZE_BYTES = 1024 * 1024 * 1024; // 1GB limit
 
 const batchService = (function() {
     
@@ -33,7 +33,7 @@ const batchService = (function() {
         const totalSize = files.reduce((acc, file) => acc + file.blob.size, 0);
         
         if (totalSize > MAX_ZIP_SIZE_BYTES) {
-            throw new Error(`Batch size (${(totalSize / 1024 / 1024).toFixed(1)}MB) exceeds 150MB limit for ZIP generation.`);
+            throw new Error(`Batch size (${(totalSize / 1024 / 1024).toFixed(1)}MB) exceeds 1GB limit for ZIP generation.`);
         }
 
         if (typeof JSZip === 'undefined') {
