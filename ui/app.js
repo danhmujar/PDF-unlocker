@@ -48,7 +48,11 @@ const SVGS = {
     upload: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>`,
     success: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>`,
     error: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>`,
-    pdf: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>`
+    pdf: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>`,
+    aurora: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>`,
+    midnight: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>`,
+    frost: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 13l3 3m0 0l3-3m-3 3v-6"></path>`,
+    ember: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.99 7.99 0 0120 13a7.98 7.98 0 01-2.343 5.657z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14l.879 2.121z"></path>`
 };
 
 // Safe SVG update — avoids innerHTML on the live document to prevent latent XSS vectors
@@ -389,19 +393,43 @@ fileInput.addEventListener('change', function () {
 
 // --- Theme Toggle Logic ---
 const themeToggle = document.getElementById('theme-toggle');
+const themeIcon = document.getElementById('theme-icon');
 const rootElement = document.documentElement;
+const themes = ['aurora', 'midnight', 'frost', 'ember'];
+
+function setTheme(theme) {
+    rootElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    if (themeIcon && SVGS[theme]) {
+        setSvgContent(themeIcon, SVGS[theme]);
+    }
+}
+
 const savedTheme = localStorage.getItem('theme');
 const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-    rootElement.setAttribute('data-theme', 'dark');
+let currentThemePref = savedTheme;
+if (!currentThemePref) {
+    currentThemePref = systemPrefersDark ? 'midnight' : 'aurora';
+} else if (currentThemePref === 'dark') {
+    currentThemePref = 'midnight';
+} else if (currentThemePref === 'light') {
+    currentThemePref = 'aurora';
 }
 
+setTheme(currentThemePref);
+
 themeToggle.addEventListener('click', () => {
-    const currentTheme = rootElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    rootElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+    const activeTheme = rootElement.getAttribute('data-theme') || 'aurora';
+    const currentIndex = themes.indexOf(activeTheme);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    const nextTheme = themes[nextIndex];
+    
+    if (document.startViewTransition) {
+        document.startViewTransition(() => setTheme(nextTheme));
+    } else {
+        setTheme(nextTheme);
+    }
 });
 
 // --- Modal About Toggle Logic ---
