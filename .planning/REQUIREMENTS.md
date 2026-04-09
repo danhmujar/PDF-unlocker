@@ -33,3 +33,9 @@
 - [x] **REQ-2.2:** Advanced ZIP Options (Post-processing selector + Throttled downloads)
 - [x] **REQ-2.3:** Drag-and-Drop Improvements (View Transitions API + Bento Grid cards)
 - [x] **REQ-2.4:** Theme Customization (Aurora/Midnight/Frost/Ember theme implementation)
+
+## 🚀 Performance Hardening (Phase 3)
+- [x] **REQ-3.1:** Enable COOP/COEP Headers via Service Worker (Cross-Origin Isolation)
+- [x] **REQ-3.2:** WorkerFS Migration (Zero-copy file mounting for WASM)
+- [x] **REQ-3.3:** Memory Optimization (Buffer unlinking and heap management)
+- [ ] **REQ-3.4:** Heavy Load UI Warnings (Scale-aware progress and batch limits)

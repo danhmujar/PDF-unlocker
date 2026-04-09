@@ -48,12 +48,13 @@
 *Goal: Optimize for massive documents (>500MB) and enable environment isolation.*
 
 **Requirements:**
-- [ ] **REQ-3.1:** Enable COOP/COEP Headers via Service Worker (Cross-Origin Isolation)
-- [ ] **REQ-3.2:** WorkerFS Migration (Zero-copy file mounting for WASM)
-- [ ] **REQ-3.3:** Memory Optimization (Buffer unlinking and heap management)
+- [x] **REQ-3.1:** Enable COOP/COEP Headers via Service Worker (Cross-Origin Isolation)
+- [x] **REQ-3.2:** WorkerFS Migration (Zero-copy file mounting for WASM)
+- [x] **REQ-3.3:** Memory Optimization (Buffer unlinking and heap management)
 - [ ] **REQ-3.4:** Heavy Load UI Warnings (Scale-aware progress and batch limits)
 
 **Plans:**
-- [ ] 03-01-PLAN.md — Security Hardening (COOP/COEP)
-- [ ] 03-02-PLAN.md — Zero-Copy Large File Engine (WorkerFS)
+2/3 plans executed
+- [x] 03-01-PLAN.md — Cross-Origin Isolation Foundation
+- [x] 03-02-PLAN.md — Zero-Copy Large File Engine (WorkerFS)
 - [ ] 03-03-PLAN.md — Heavy Load UI & Scale Warnings
