@@ -2,29 +2,74 @@ const fs = require('fs');
 const crypto = require('crypto');
 const path = require('path');
 
-const assets = [
-    'ui/app.js',
-    'ui/styles.css',
-    'services/pdfService.js',
-    'services/persistenceService.js',
-    'services/batchService.js',
-    'services/auditService.js',
-    'services/pdfWorker.js',
-    'sw-register.js',
-    'assets/vendor/jszip.min.js',
-    'assets/vendor/qpdf/qpdf.js',
-    'assets/vendor/qpdf/qpdf.wasm'
-];
+const ROOT_DIR = path.resolve(__dirname, '..');
+const OUTPUT_FILE = path.resolve(__dirname, 'sri-hashes.json');
 
+/**
+ * Recursively finds all files in a directory.
+ * @param {string} dir - Directory to search.
+ * @param {string[]} filelist - Accumulated list of files.
+ * @returns {string[]}
+ */
+function walkSync(dir, filelist = []) {
+    if (!fs.existsSync(dir)) return filelist;
+    const files = fs.readdirSync(dir);
+    files.forEach(file => {
+        const filePath = path.join(dir, file);
+        if (fs.statSync(filePath).isDirectory()) {
+            filelist = walkSync(filePath, filelist);
+        } else {
+            filelist.push(filePath);
+        }
+    });
+    return filelist;
+}
+
+const targetDirs = ['ui', 'services', 'assets/vendor'];
+const individualFiles = ['sw-register.js', 'sw.js'];
+const extensions = ['.js', '.css', '.wasm'];
+
+let allFiles = [];
+
+// Discover files in target directories
+targetDirs.forEach(dir => {
+    const dirPath = path.join(ROOT_DIR, dir);
+    allFiles = allFiles.concat(walkSync(dirPath));
+});
+
+// Add individual files from root
+individualFiles.forEach(file => {
+    const filePath = path.join(ROOT_DIR, file);
+    if (fs.existsSync(filePath)) {
+        allFiles.push(filePath);
+    }
+});
+
+// Filter by extension and normalize paths
+const assets = allFiles
+    .filter(file => {
+        const ext = path.extname(file);
+        const name = path.basename(file);
+        return extensions.includes(ext) && !name.startsWith('.');
+    })
+    .map(file => path.relative(ROOT_DIR, file).replace(/\\/g, '/'))
+    .sort();
+
+/**
+ * Generates SRI hash for a file.
+ * @param {string} filePath - Path relative to root.
+ * @returns {string|null}
+ */
 function generateSri(filePath) {
-    const fullPath = path.resolve(__dirname, '..', filePath);
-    if (!fs.existsSync(fullPath)) {
-        console.warn(`Warning: File not found: ${filePath}`);
+    const fullPath = path.resolve(ROOT_DIR, filePath);
+    try {
+        const fileBuffer = fs.readFileSync(fullPath);
+        const hash = crypto.createHash('sha384').update(fileBuffer).digest('base64');
+        return `sha384-${hash}`;
+    } catch (error) {
+        console.warn(`Warning: Could not process ${filePath}: ${error.message}`);
         return null;
     }
-    const fileBuffer = fs.readFileSync(fullPath);
-    const hash = crypto.createHash('sha384').update(fileBuffer).digest('base64');
-    return `sha384-${hash}`;
 }
 
 const results = {};
@@ -35,8 +80,8 @@ assets.forEach(asset => {
     }
 });
 
-console.log(JSON.stringify(results, null, 2));
+// Write to scripts/sri-hashes.json
+fs.writeFileSync(OUTPUT_FILE, JSON.stringify(results, null, 2));
 
-// Also write to a file for verifySri.js to use
-fs.writeFileSync(path.resolve(__dirname, 'sri-hashes.json'), JSON.stringify(results, null, 2));
-console.log('\nHashes written to scripts/sri-hashes.json');
+console.log(`Generated SRI hashes for ${Object.keys(results).length} assets.`);
+console.log('Results written to scripts/sri-hashes.json');
