@@ -61,6 +61,14 @@ describe('pdfWorker', () => {
         };
         vi.stubGlobal('WebAssembly', mockWebAssembly);
 
+        // Mock crypto.subtle.digest
+        const mockDigest = vi.fn().mockResolvedValue(new Uint8Array(32).fill(0).buffer);
+        vi.stubGlobal('crypto', {
+            subtle: {
+                digest: mockDigest
+            }
+        });
+
         // Mock navigator
         vi.stubGlobal('navigator', { onLine: true });
 
@@ -81,12 +89,17 @@ describe('pdfWorker', () => {
                 log: vi.fn(),
                 warn: vi.fn(),
                 error: vi.fn(),
+            },
+            crypto: {
+                subtle: {
+                    digest: mockDigest
+                }
             }
         };
 
         // Evaluate the worker code in a simulated worker scope
-        const fn = new Function('self', 'importScripts', 'Module', 'fetch', 'Uint8Array', 'WebAssembly', 'navigator', pdfWorkerContent);
-        fn(workerScope, workerScope.importScripts, mockModule, mockFetch, Uint8Array, mockWebAssembly, navigator);
+        const fn = new Function('self', 'importScripts', 'Module', 'fetch', 'Uint8Array', 'WebAssembly', 'navigator', 'crypto', pdfWorkerContent);
+        fn(workerScope, workerScope.importScripts, mockModule, mockFetch, Uint8Array, mockWebAssembly, navigator, workerScope.crypto);
     });
 
     it('should initialize WASM successfully', async () => {
@@ -136,7 +149,7 @@ describe('pdfWorker', () => {
         }));
     });
 
-    it('should process a valid PDF and return success message with Transferable', async () => {
+    it('should process a valid PDF and return success message with hash and Transferable', async () => {
         const mockQpdf = {
             FS: {
                 mkdir: vi.fn(),
@@ -170,14 +183,18 @@ describe('pdfWorker', () => {
             sub: expect.stringContaining('WorkerFS')
         }));
 
-        // Check for success message
+        // Check for success message with hash
         expect(postMessage).toHaveBeenCalledWith(
             expect.objectContaining({ 
                 type: 'success', 
-                name: 'test.pdf' 
+                name: 'test.pdf',
+                hash: expect.any(String)
             }),
             expect.any(Array) // Transferable Objects (ArrayBuffer)
         );
+
+        const successMsg = postMessage.mock.calls.find(call => call[0].type === 'success')[0];
+        expect(successMsg.hash).toHaveLength(64); // SHA-256 hex string
 
         // Verify WorkerFS interactions
         expect(mockQpdf.FS.mount).toHaveBeenCalledWith(

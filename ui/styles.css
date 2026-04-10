@@ -1419,11 +1419,186 @@ body.modal-open {
     50% { opacity: 0.4; }
 }
 
-@keyframes slideUp {
-    from { transform: translate(-50%, 100%); opacity: 0; }
-    to { transform: translate(-50%, 0); opacity: 1; }
-}
-
 .hidden {
     display: none !important;
+}
+
+/* --- Security UX additions (Task 05-03) --- */
+.file-card .file-details {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.file-card .file-hash {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.625rem;
+    color: var(--subtitle-color);
+    opacity: 0.7;
+    margin-top: 0.125rem;
+    cursor: help;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-card .file-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.25rem;
+}
+
+.verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--success-color);
+    background: var(--success-bg);
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
+    animation: verified-glow 3s infinite ease-in-out;
+}
+
+.verified-badge svg {
+    width: 12px;
+    height: 12px;
+}
+
+@keyframes verified-glow {
+    0%, 100% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); }
+    50% { box-shadow: 0 0 12px rgba(16, 185, 129, 0.3); border-color: rgba(16, 185, 129, 0.5); }
+}
+
+/* --- Audit Log Styling --- */
+.audit-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.audit-log-container {
+    margin-top: 1rem;
+    overflow-x: auto;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid var(--card-border);
+}
+
+.audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+    text-align: left;
+}
+
+.audit-table th {
+    background: var(--card-hover-bg);
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    border-bottom: 1px solid var(--card-border);
+}
+
+.audit-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--card-border);
+    color: var(--subtitle-color);
+}
+
+.audit-table tr:last-child td {
+    border-bottom: none;
+}
+
+.audit-table tr:hover td {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.status-pill.success {
+    background: var(--success-bg);
+    color: var(--success-color);
+}
+
+.status-pill.error {
+    background: var(--error-bg);
+    color: var(--error-color);
+}
+
+.hash-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.hash-cell code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+}
+
+.copy-hash-btn {
+    background: transparent;
+    border: none;
+    color: var(--icon-color);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.copy-hash-btn:hover {
+    color: var(--accent-color);
+    background: rgba(37, 99, 235, 0.1);
+}
+
+.copy-hash-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.copy-hash-btn.copied {
+    color: var(--success-color);
+}
+
+/* --- Utility Classes (CSP Compliance) --- */
+.text-center { text-align: center; }
+.w-full { width: 100%; }
+.justify-center { justify-content: center; }
+
+.audit-info-text {
+    font-size: 0.65rem;
+    color: var(--subtitle-color);
+    margin-top: 0.5rem;
+}
+
+.audit-panel-wide {
+    max-width: 50rem !important;
+}
+
+.audit-subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 1.5rem;
+    color: var(--subtitle-color);
+}
+
+.audit-empty-state {
+    text-align: center;
+    padding: 3rem 0;
+    color: var(--subtitle-color);
 }

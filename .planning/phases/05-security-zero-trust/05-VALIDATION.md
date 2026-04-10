@@ -15,7 +15,7 @@ This protocol defines the verification steps required to certify the security ha
 
 ### A-5.1: SRI Check
 Validates that every `<script>` and `<link>` in `index.html` has an `integrity` attribute matching the actual file content.
-- **Command:** `node scripts/verify-sri.js`
+- **Command:** `node scripts/verifySri.js`
 
 ### A-5.2: CSP Audit
 Checks the Content Security Policy for violations and ensures strict source enforcement.

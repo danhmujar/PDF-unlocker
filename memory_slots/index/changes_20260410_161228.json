@@ -1,0 +1,47 @@
+{
+  "timestamp": "2026-04-10T16:12:28.144882",
+  "dirty_slots": [
+    "phase_5_verification"
+  ],
+  "word_updates": {},
+  "slot_updates": {
+    "phase_5_verification": {
+      "word_counts": {
+        "phase_5_verification": 1,
+        "phase": 1,
+        "security": 1,
+        "zero": 1,
+        "trust": 1,
+        "plans": 2,
+        "05": 3,
+        "01": 1,
+        "02": 1,
+        "03": 1,
+        "were": 1,
+        "verified": 1,
+        "by": 1,
+        "gsd": 1,
+        "plan": 1,
+        "checker": 1,
+        "on": 1,
+        "2026": 1,
+        "04": 1,
+        "10": 1,
+        "all": 1,
+        "passed": 1,
+        "verification": 1,
+        "and": 1,
+        "are": 1,
+        "ready": 1,
+        "for": 1,
+        "execution": 1,
+        "covering": 1,
+        "requirements": 1,
+        "req": 2,
+        "to": 1
+      },
+      "total_words": 36,
+      "content_hash": "9819029a0902fbe69c537f9b6d98898621575d42d80145f53bcea6771509b485"
+    }
+  }
+}

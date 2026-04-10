@@ -55,7 +55,7 @@ window.pdfService = (function () {
          */
         function setupWorker(workerObj) {
             workerObj.worker.onmessage = (e) => {
-                const { type, state, main, sub, blob, name } = e.data;
+                const { type, state, main, sub, blob, name, hash } = e.data;
 
                 switch (type) {
                     case 'ready':
@@ -75,7 +75,7 @@ window.pdfService = (function () {
                         break;
 
                     case 'success':
-                        handleWorkerSuccess(workerObj, blob, name);
+                        handleWorkerSuccess(workerObj, blob, name, hash);
                         break;
 
                     case 'error':
@@ -152,14 +152,22 @@ window.pdfService = (function () {
         /**
          * Handle successful task completion.
          */
-        function handleWorkerSuccess(workerObj, outputBuffer, fileName) {
+        function handleWorkerSuccess(workerObj, outputBuffer, fileName, hash) {
             const { currentTask } = workerObj;
             if (!currentTask) return;
+
+            // Audit Log
+            if (window.auditService) {
+                window.auditService.logEvent('SUCCESS', {
+                    file: fileName,
+                    hash: hash
+                });
+            }
 
             const outputBlob = new Blob([outputBuffer], { type: "application/pdf" });
             
             if (currentTask.config?.returnBlob) {
-                currentTask.resolve(outputBlob);
+                currentTask.resolve({ blob: outputBlob, hash: hash });
             } else {
                 // Auto-download (legacy behavior support)
                 const nameWithoutExt = fileName.toLowerCase().endsWith('.pdf') ? fileName.slice(0, -4) : fileName;
@@ -176,7 +184,7 @@ window.pdfService = (function () {
                 if (currentTask.callbacks?.onStatus) {
                     currentTask.callbacks.onStatus('success', 'Success! Downloading...', `${newFilename} is ready.`);
                 }
-                currentTask.resolve(null);
+                currentTask.resolve({ blob: null, hash: hash });
             }
 
             cleanupWorker(workerObj);
@@ -188,6 +196,15 @@ window.pdfService = (function () {
         function handleWorkerError(workerObj, main, sub) {
             const { currentTask } = workerObj;
             if (currentTask) {
+                // Audit Log
+                if (window.auditService) {
+                    window.auditService.logEvent('ERROR', {
+                        file: currentTask.file?.name,
+                        error: main,
+                        details: sub
+                    });
+                }
+
                 if (currentTask.callbacks?.onStatus) {
                     currentTask.callbacks.onStatus('error', main, sub);
                 }
@@ -219,16 +236,37 @@ window.pdfService = (function () {
      */
     async function processFile(file, callbacks, config = { returnBlob: false }) {
         if (wasmSupportStatus === 'blocked') {
+            if (window.auditService) {
+                window.auditService.logEvent('ERROR', {
+                    file: file?.name,
+                    error: 'Browser Restricted',
+                    details: 'WebAssembly is blocked.'
+                });
+            }
             callbacks.onStatus('error', 'Browser Restricted', 'Your browser or organization security policy blocks WebAssembly.');
             return null;
         }
 
         if (!file || file.type !== "application/pdf") {
+            if (window.auditService) {
+                window.auditService.logEvent('ERROR', {
+                    file: file?.name,
+                    error: 'Invalid Format',
+                    details: 'Not a valid PDF.'
+                });
+            }
             callbacks.onStatus('error', 'Invalid Format', 'Please upload a valid PDF document.');
             return null;
         }
 
         if (file.size > MAX_FILE_SIZE_BYTES) {
+            if (window.auditService) {
+                window.auditService.logEvent('ERROR', {
+                    file: file?.name,
+                    error: 'File Too Large',
+                    details: `Size exceeds ${MAX_FILE_SIZE_MB} MB.`
+                });
+            }
             callbacks.onStatus('error', 'File Too Large', `Maximum file size is ${MAX_FILE_SIZE_MB} MB.`);
             return null;
         }

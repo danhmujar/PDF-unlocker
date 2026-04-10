@@ -12,6 +12,16 @@ importScripts('../assets/vendor/qpdf/qpdf.js');
 let qpdfModule = null;
 
 /**
+ * Helper to convert buffer to hex string.
+ * @param {ArrayBuffer} buffer 
+ * @returns {string}
+ */
+function bufferToHex(buffer) {
+    const hashArray = Array.from(new Uint8Array(buffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
  * Initialize the QPDF WebAssembly module.
  */
 async function initWasm() {
@@ -144,13 +154,18 @@ async function processFile(file, fileName) {
         // Read the result from MEMFS (output is in MEMFS)
         const outputFile = qpdfModule.FS.readFile(outputName);
         
+        // Calculate SHA-256 hash of the output
+        const hashBuffer = await self.crypto.subtle.digest('SHA-256', outputFile);
+        const hashHex = bufferToHex(hashBuffer);
+
         // Send back the processed file using Transferable Objects
         const outputBuffer = new Uint8Array(outputFile).buffer;
         
         self.postMessage({ 
             type: 'success', 
             blob: outputBuffer, 
-            name: fileName 
+            name: fileName,
+            hash: hashHex
         }, [outputBuffer]);
 
         // Cleanup output from MEMFS immediately

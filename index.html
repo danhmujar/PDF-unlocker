@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data:; worker-src 'self' blob:;">
+        content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data:; worker-src 'self' blob:; object-src 'none';">
     <meta name="author" content="Danh Michael Mujar">
     <meta name="description"
         content="A strict client-side WebAssembly tool to instantly remove owner restrictions (printing, copying, editing) from PDF documents with zero cloud uploads.">
@@ -23,7 +23,7 @@
             href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap"
             rel="stylesheet">
     </noscript>
-    <link rel="stylesheet" href="ui/styles.css">
+    <link rel="stylesheet" href="ui/styles.css" integrity="sha384-xN7ImN9ZQWarsmFIPEuQSzL5Ws7k+Nyg1TRj/JsJPcRIKyttRbhcQOuJzMeOfYkI" crossorigin="anonymous">
 </head>
 
 <body>
@@ -234,16 +234,60 @@
                         rel="noopener noreferrer">Connect on LinkedIn &rarr;</a>
                 </div>
             </div>
+
+            <div class="mt-4 text-center">
+                <button id="view-audit-log-btn" class="secondary-btn w-full justify-center">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                    </svg>
+                    View Security Audit Log
+                </button>
+                <p class="audit-info-text">Logs are stored locally in your browser's IndexedDB and never leave this device.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Log Modal -->
+    <div class="modal-backdrop" id="audit-modal-backdrop" aria-hidden="true">
+        <div class="about-panel audit-panel audit-panel-wide" role="dialog" aria-modal="true" aria-labelledby="audit-modal-title">
+            <button class="modal-close" id="audit-modal-close" aria-label="Close audit log">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            <h2 id="audit-modal-title">Security Audit Log</h2>
+            <p class="subtitle audit-subtitle">A local-only record of cryptographic operations performed during this session.</p>
+
+            <div class="audit-log-container">
+                <table class="audit-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Action</th>
+                            <th>File</th>
+                            <th>Status</th>
+                            <th>SHA-256 Hash</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-log-body">
+                        <!-- Logs will be populated here -->
+                    </tbody>
+                </table>
+                <div id="audit-empty-state" class="hidden audit-empty-state">
+                    No activity recorded yet. Process a file to see it here.
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="assets/vendor/jszip.min.js"
         integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG" crossorigin="anonymous"
         async></script>
-    <script src="services/pdfService.js" defer></script>
-    <script src="services/batchService.js" defer></script>
-    <script src="ui/app.js" defer></script>
-    <script src="sw-register.js" defer></script>
+    <script src="services/auditService.js" integrity="sha384-hs9EJXHVuHPgw7EjFx0Zn8uaNuO2nOSZGOgMG2Fe73kebb2dYkY+xUaYyl01THiH" crossorigin="anonymous" defer></script>
+    <script src="services/pdfService.js" integrity="sha384-3rGS7pTGxATDNcngPO2IFNT1Mq43t0ZkTGqCnGK/1BbIOoEoIU3Er5HZr2tn+7Cv" crossorigin="anonymous" defer></script>
+    <script src="services/batchService.js" integrity="sha384-zGnMhCUI7W71mbxW2+FjamrrjpYe8e/fqD7wUj3mRrcQ7OQBer+GZSMunCDLiJZS" crossorigin="anonymous" defer></script>
+    <script src="ui/app.js" integrity="sha384-mn7U78kTmvJN5iURJNEHFc0hOzBU8ht3WMTNqxf984UkqwEqjLljfJMLX//WdPRc" crossorigin="anonymous" defer></script>
+    <script src="sw-register.js" integrity="sha384-CjeGNC+c22V5VLJzow2Gaf4FfP62KFRxiO6W9vJSgGjIv+hAvOuSspYKN14jr62e" crossorigin="anonymous" defer></script>
     <!-- Performance Benchmark (Internal Tooling) -->
     <!-- <script type="module" src="tests/perf_test.js"></script> -->
 </body>

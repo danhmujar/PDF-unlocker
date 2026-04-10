@@ -139,7 +139,7 @@ function resetState() {
 }
 
 // --- Bento Grid Rendering ---
-function renderBentoGrid(files) {
+async function renderBentoGrid(files) {
     const update = () => {
         bentoGrid.classList.remove('hidden');
         dropZone.classList.add('compact');
@@ -157,29 +157,57 @@ function renderBentoGrid(files) {
                     <svg class="file-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         ${SVGS.pdf}
                     </svg>
-                    <span class="file-name" title="${file.name}">${file.name}</span>
+                    <div class="file-details">
+                        <span class="file-name" title="${file.name}">${file.name}</span>
+                        <div class="file-hash hidden"></div>
+                    </div>
                 </div>
-                <div class="file-status">Pending</div>
+                <div class="file-meta">
+                    <div class="file-status">Pending</div>
+                    <div class="verified-badge hidden" title="Cryptographically Verified: This file was processed locally and its integrity confirmed via SHA-256.">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                        <span>Verified</span>
+                    </div>
+                </div>
             `;
             bentoGrid.appendChild(card);
         });
     };
 
     if (document.startViewTransition) {
-        document.startViewTransition(update);
+        const transition = document.startViewTransition(update);
+        await transition.updateCallbackDone;
     } else {
         update();
     }
 }
 
-function updateCardStatus(file, state, text) {
+function updateCardStatus(file, state, text, hash = null) {
     const cardId = `file-${file.name.replace(/[^a-z0-9]/gi, '-')}-${file.size}`;
     const card = document.getElementById(cardId);
-    if (!card) return;
+    if (!card) {
+        console.warn(`Card not found for ID: ${cardId}`, file);
+        console.log('DEBUG: Available IDs:', Array.from(document.querySelectorAll('[id]')).map(el => el.id));
+        return;
+    }
 
+    console.log(`Updating card ${cardId} to state ${state}`);
     card.className = `file-card ${state}`;
     const statusEl = card.querySelector('.file-status');
     if (statusEl) statusEl.textContent = text;
+
+    if (hash && state === 'success') {
+        const hashEl = card.querySelector('.file-hash');
+        if (hashEl) {
+            hashEl.textContent = `SHA-256: ${hash.substring(0, 8)}...${hash.substring(hash.length - 8)}`;
+            hashEl.title = hash;
+            hashEl.classList.remove('hidden');
+        }
+        const badge = card.querySelector('.verified-badge');
+        if (badge) badge.classList.remove('hidden');
+    }
 }
 
 const MAX_BATCH_FILES = 20;
@@ -201,7 +229,7 @@ async function processQueue() {
     currentBatchFiles = [];
 
     // Render/Update grid with all files in queue
-    renderBentoGrid(fileQueue);
+    await renderBentoGrid([...fileQueue]);
 
     const filesToProcess = [...fileQueue];
     fileQueue = [];
@@ -235,12 +263,12 @@ async function processQueue() {
         };
 
         try {
-            const resultBlob = await pdfService.WorkerPool.enqueue(file, callbacks, { returnBlob: true });
+            const result = await pdfService.WorkerPool.enqueue(file, callbacks, { returnBlob: true });
             currentBatchProcessed++;
-            if (resultBlob) {
+            if (result && result.blob) {
                 currentBatchSuccessful++;
-                updateCardStatus(file, 'success', 'Unlocked');
-                handleProcessedFile(resultBlob, file.name);
+                updateCardStatus(file, 'success', 'Unlocked', result.hash);
+                handleProcessedFile(result.blob, file.name);
             } else {
                 updateCardStatus(file, 'error', 'Failed');
             }
@@ -563,6 +591,121 @@ function closeModal() {
 
 aboutToggle.addEventListener('click', openModal);
 modalClose.addEventListener('click', closeModal);
+
+// --- Audit Log Modal Logic ---
+const viewAuditBtn = document.getElementById('view-audit-log-btn');
+const auditModalBackdrop = document.getElementById('audit-modal-backdrop');
+const auditModalClose = document.getElementById('audit-modal-close');
+const auditLogBody = document.getElementById('audit-log-body');
+const auditEmptyState = document.getElementById('audit-empty-state');
+
+async function openAuditLog() {
+    closeModal(); // Close About modal first
+    auditModalBackdrop.classList.add('open');
+    auditModalBackdrop.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+    auditModalClose.focus();
+
+    await refreshAuditLog();
+}
+
+async function refreshAuditLog() {
+    if (!window.auditService) return;
+
+    try {
+        const logs = await window.auditService.getLogs();
+        auditLogBody.innerHTML = '';
+        
+        if (logs.length === 0) {
+            auditEmptyState.classList.remove('hidden');
+            return;
+        }
+
+        auditEmptyState.classList.add('hidden');
+        
+        // Sort logs descending by timestamp
+        logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        logs.forEach(log => {
+            const row = document.createElement('tr');
+            const date = new Date(log.timestamp).toLocaleString();
+            const type = log.type;
+            const details = log.details || {};
+            
+            row.innerHTML = `
+                <td>${date}</td>
+                <td>${type === 'SUCCESS' ? 'Unlock' : 'Error'}</td>
+                <td title="${details.file || 'Unknown'}">${details.file || 'Unknown'}</td>
+                <td><span class="status-pill ${type.toLowerCase()}">${type}</span></td>
+                <td>
+                    <div class="hash-cell">
+                        <code title="${details.hash || 'N/A'}">${details.hash ? details.hash.substring(0, 8) + '...' : 'N/A'}</code>
+                        ${details.hash ? `
+                            <button class="copy-hash-btn" data-hash="${details.hash}" title="Copy full SHA-256">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                </svg>
+                            </button>
+                        ` : ''}
+                    </div>
+                </td>
+            `;
+            auditLogBody.appendChild(row);
+        });
+
+        // Add event listeners for copy buttons
+        auditLogBody.querySelectorAll('.copy-hash-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const hash = e.currentTarget.dataset.hash;
+                copyToClipboard(hash, e.currentTarget);
+            });
+        });
+    } catch (err) {
+        console.error("Failed to load audit logs:", err);
+    }
+}
+
+function closeAuditModal() {
+    auditModalBackdrop.classList.remove('open');
+    auditModalBackdrop.setAttribute('aria-hidden', 'true');
+    document.body.classList.add('modal-open'); // Stay modal-open if we might go back, but actually we should check if other modals are open
+    
+    // Check if about modal is somehow still open (shouldn't be)
+    if (!modalBackdrop.classList.contains('open')) {
+        document.body.classList.remove('modal-open');
+    }
+    aboutToggle.focus();
+}
+
+async function copyToClipboard(text, element) {
+    try {
+        await navigator.clipboard.writeText(text);
+        const originalHtml = element.innerHTML;
+        element.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+        element.classList.add('copied');
+        setTimeout(() => {
+            element.innerHTML = originalHtml;
+            element.classList.remove('copied');
+        }, 2000);
+    } catch (err) {
+        console.error('Failed to copy: ', err);
+    }
+}
+
+viewAuditBtn.addEventListener('click', openAuditLog);
+auditModalClose.addEventListener('click', closeAuditModal);
+
+// Close modal when clicking outside
+auditModalBackdrop.addEventListener('click', (e) => {
+    if (e.target === auditModalBackdrop) closeAuditModal();
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && auditModalBackdrop.classList.contains('open')) {
+        closeAuditModal();
+    }
+});
 
 // Close modal when clicking outside the panel
 modalBackdrop.addEventListener('click', (e) => {

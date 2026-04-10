@@ -1,1 +1,18 @@
-{}
+{
+  "12dffbcda44cbf9fef33e9c94ce4ca89": {
+    "key": "slot:phase_4_research",
+    "created_at": "2026-04-10T17:26:46.440698",
+    "last_accessed": "2026-04-10T17:26:46.440698",
+    "access_count": 0,
+    "size_bytes": 1318,
+    "ttl_seconds": 3600
+  },
+  "a426c216b465ecba28eabe34135fe382": {
+    "key": "slot:phase_5_verification",
+    "created_at": "2026-04-10T17:26:46.472661",
+    "last_accessed": "2026-04-10T17:26:46.472661",
+    "access_count": 0,
+    "size_bytes": 948,
+    "ttl_seconds": 3600
+  }
+}

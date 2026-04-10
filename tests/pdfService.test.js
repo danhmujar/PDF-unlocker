@@ -55,14 +55,90 @@ describe('pdfService (Worker Proxy)', () => {
 
         vi.stubGlobal('navigator', { hardwareConcurrency: 4 });
 
+        // Mock auditService
+        vi.stubGlobal('auditService', {
+            logEvent: vi.fn().mockResolvedValue(undefined),
+            getLogs: vi.fn().mockResolvedValue([]),
+        });
+
         // Evaluate the service code
-        const mockWindow = {};
+        const mockWindow = { auditService: window.auditService };
         const fn = new Function('window', pdfServiceContent);
         fn(mockWindow);
         pdfService = mockWindow.pdfService;
     });
 
-    it('should reject non-PDF files', async () => {
+    it('should log success event when processing completes', async () => {
+        const onStatus = vi.fn();
+        const mockFile = {
+            type: 'application/pdf',
+            name: 'test.pdf',
+            size: 100
+        };
+
+        const processPromise = pdfService.processFile(mockFile, { onStatus }, { returnBlob: true });
+        
+        const workers = mockWorkerConstructor.mock.results.map(r => r.value);
+        workers[0].onmessage({ data: { type: 'ready' } });
+        
+        await vi.waitFor(() => expect(workers[0].postMessage).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'process' })
+        ));
+
+        // Simulate success from worker
+        const outputBuffer = new ArrayBuffer(4);
+        workers[0].onmessage({ 
+            data: { 
+                type: 'success', 
+                blob: outputBuffer, 
+                name: 'test.pdf',
+                hash: 'abc123hash'
+            } 
+        });
+
+        await processPromise;
+        
+        expect(window.auditService.logEvent).toHaveBeenCalledWith('SUCCESS', expect.objectContaining({
+            file: 'test.pdf',
+            hash: 'abc123hash'
+        }));
+    });
+
+    it('should log error event when processing fails', async () => {
+        const onStatus = vi.fn();
+        const mockFile = {
+            type: 'application/pdf',
+            name: 'error.pdf',
+            size: 100
+        };
+
+        const processPromise = pdfService.processFile(mockFile, { onStatus });
+        
+        const workers = mockWorkerConstructor.mock.results.map(r => r.value);
+        workers[0].onmessage({ data: { type: 'ready' } });
+        
+        await vi.waitFor(() => expect(workers[0].postMessage).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'process' })
+        ));
+
+        // Simulate error from worker
+        workers[0].onmessage({ 
+            data: { 
+                type: 'error', 
+                main: 'Processing Failed', 
+                sub: 'Corrupt file' 
+            } 
+        });
+
+        await processPromise;
+        
+        expect(window.auditService.logEvent).toHaveBeenCalledWith('ERROR', expect.objectContaining({
+            file: 'error.pdf',
+            error: 'Processing Failed'
+        }));
+    });
+
+    it('should reject non-PDF files and log ERROR', async () => {
         const mockFile = { type: 'text/plain', name: 'test.txt' };
         const onStatus = vi.fn();
         const fileInput = { value: 'something' };
@@ -71,9 +147,13 @@ describe('pdfService (Worker Proxy)', () => {
 
         expect(result).toBeNull();
         expect(onStatus).toHaveBeenCalledWith('error', 'Invalid Format', expect.any(String));
+        expect(window.auditService.logEvent).toHaveBeenCalledWith('ERROR', expect.objectContaining({
+            file: 'test.txt',
+            error: 'Invalid Format'
+        }));
     });
 
-    it('should reject files that are too large', async () => {
+    it('should reject files that are too large and log ERROR', async () => {
         const mockFile = {
             type: 'application/pdf',
             name: 'large.pdf',
@@ -86,6 +166,10 @@ describe('pdfService (Worker Proxy)', () => {
 
         expect(result).toBeNull();
         expect(onStatus).toHaveBeenCalledWith('error', 'File Too Large', expect.any(String));
+        expect(window.auditService.logEvent).toHaveBeenCalledWith('ERROR', expect.objectContaining({
+            file: 'large.pdf',
+            error: 'File Too Large'
+        }));
     });
 
     it('should initialize worker pool and send init message to all', async () => {
@@ -134,11 +218,19 @@ describe('pdfService (Worker Proxy)', () => {
 
         // Simulate success from worker
         const outputBuffer = new ArrayBuffer(4);
-        workers[0].onmessage({ data: { type: 'success', blob: outputBuffer, name: 'test.pdf' } });
+        workers[0].onmessage({ 
+            data: { 
+                type: 'success', 
+                blob: outputBuffer, 
+                name: 'test.pdf',
+                hash: 'hash123'
+            } 
+        });
 
         const result = await processPromise;
         expect(result).toBeDefined();
-        expect(result.options.type).toBe("application/pdf");
+        expect(result.blob.options.type).toBe("application/pdf");
+        expect(result.hash).toBe("hash123");
         expect(pdfService.isProcessing).toBe(false);
     });
 
