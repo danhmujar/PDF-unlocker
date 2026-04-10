@@ -56,4 +56,4 @@
 - [x] **REQ-7.1:** Automated SRI Pipeline (Auto-generate hashes for vendor assets in CI)
 - [x] **REQ-7.2:** Multi-Browser CI (Playwright testing for FF/Safari)
 - [x] **REQ-7.3:** Accessibility Audit (ARIA parity for Bento Grid and Theme HUD)
-- [ ] **REQ-7.4:** Performance Instrumentation (Telemetry for worker memory)
+- [x] **REQ-7.4:** Performance Instrumentation (Telemetry for worker memory)
