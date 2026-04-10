@@ -4,12 +4,12 @@
   "assets/vendor/qpdf/qpdf.wasm": "sha384-9ESKDLiqwqZ9ln5RdWhoE5TM/zLYG2UoW/AMa0KeND/fhDO5ZJsRH6FTJ3Dera+p",
   "services/auditService.js": "sha384-+qj2BJVH5JaHkz2ChNgLK5GTFDU3dzI0rc+PoJRUD3IDzPOZm3ETcUYClq1rQ4j0",
   "services/batchService.js": "sha384-hDa89Dbl4VdsPOopbJQv71voTQ8Wt+IMIBldGcCCLbrKR+V+5vO0m35UdYaY+qcv",
-  "services/diagnosticsService.js": "sha384-ivzbbBml1g5h2i25DH1P0YxzjCjs7vNntPr22QoBok63ErTUipgFLq0ZtdAyGH7z",
+  "services/diagnosticsService.js": "sha384-AMhmgtGixCMKmDXa3EVT1lzWhSqrf25YjeN85jjx+D+Vux3XqRnAGct1Ve+Cd7lj",
   "services/pdfService.js": "sha384-+FnffhR0aSEyRd4IDTbUGVG+TKfQcuvGTcppN/pfTqXeJT9apRwkK0iTeww6Z28F",
   "services/pdfWorker.js": "sha384-YyoHCxgJ0vG4fEcdTYCGLgT8Tktw95TmXsAIJRsT13//Cd/BJO2xsOXit4DnrncX",
   "services/persistenceService.js": "sha384-Y261mvPo7LDegJ3kHV9DAGRBsSPlU3mkcCrJmH33N0v+8KSlouYk8Ougj1Pg/Ttt",
   "sw-register.js": "sha384-YU+vu+KlgYkwJh8qyiQz7Ir5S7dCGcYC9F06TZCFcAltL1d26pHMZFbwOTfk8EQe",
-  "sw.js": "sha384-s7GDd5Y1O27jztCEmK4IC5WFMLA4LvcgX7J+DsmN/3reEapzVLYNlDbIewwUPIdG",
-  "ui/app.js": "sha384-1WaAi+AHaqH03eoKzUMgulArv2+fWy2AZNRpwQ2zQGAmq+A/+pYstxCMggM73Tzu",
+  "sw.js": "sha384-FiYGXO0U9GQqvi9umFSTTryGAcp1M/x+xEsBcIc+FP743FpNrriSbsA/X+vV3qeu",
+  "ui/app.js": "sha384-PJaKN2rGwXmxF0AMu+Wj526n42V8pCQvbtvQpCTyuN/bghq5XgiLd45/EPHZNxsL",
   "ui/styles.css": "sha384-U0utK+LmOKS1CaqLdXn3WHee4oKaSkyBDG6MPaEoeKo42ztICH9Y/3BH37dIaEzr"
 }
