@@ -4,11 +4,17 @@
     "automatic_validation": true,
     "require_tests": true,
     "planning_scope": "Full-Scale",
-    "tone": "senior-engineer"
+    "tone": "senior-engineer",
+    "_auto_chain_active": false
   },
   "project": {
     "name": "PDF Unlocker",
-    "stack": ["Vanilla JS", "WASM", "Web Workers", "PWA"],
+    "stack": [
+      "Vanilla JS",
+      "WASM",
+      "Web Workers",
+      "PWA"
+    ],
     "architecture": "3-Tier (Logic in Worker)",
     "version": "2.0.0-dev"
   }

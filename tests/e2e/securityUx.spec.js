@@ -22,6 +22,12 @@ test.describe('Security UX', () => {
             route.fulfill({
                 contentType: 'application/javascript',
                 body: `
+                    window.diagnosticsService = {
+                        recordWorkerStart: () => {},
+                        recordProcessComplete: () => {},
+                        recordError: () => {},
+                        getStats: () => ({})
+                    };
                     window.pdfService = {
                         initWasm: () => Promise.resolve(),
                         startJob: () => Promise.resolve(),

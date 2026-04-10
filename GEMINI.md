@@ -75,8 +75,8 @@ C:\Users\Danh Mujar\Desktop\test\PDF Unlocker\
 
 ## ⚠️ Known Constraints & Concerns
 - **WASM Security:** Some browser configurations or corporate policies may block `wasm-unsafe-eval`.
-- **Memory Limits:** Batch processing is limited to ~150MB total for ZIP generation to prevent browser crashes.
-- **Single Threaded:** WASM processing happens on the main thread; the UI uses spinners to maintain responsiveness.
+- **Memory Limits:** Batch processing is optimized for up to 1GB total via IndexedDB spillover.
+- **Multi-Threaded:** WASM processing happens in dedicated Web Workers; the UI remains fully responsive during heavy tasks.
 
 ---
-*Last updated: April 9, 2026*
+*Last updated: April 11, 2026*

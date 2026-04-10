@@ -13,6 +13,7 @@ module.exports = {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
     video: 'on-first-retry',
+    viewport: { width: 1280, height: 720 },
   },
   projects: [
     {
@@ -25,7 +26,7 @@ module.exports = {
     },
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: { ...devices['Desktop Safari'], viewport: { width: 1280, height: 720 } },
     },
   ],
 };

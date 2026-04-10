@@ -62,7 +62,13 @@ describe('Theme Logic (app.js HUD Integration)', () => {
         // Mock Globals
         vi.stubGlobal('pdfService', {
             initWasm: vi.fn().mockResolvedValue(),
+            getInterruptedJobs: vi.fn().mockResolvedValue([]),
             WorkerPool: { init: vi.fn(), enqueue: vi.fn() }
+        });
+        vi.stubGlobal('diagnosticsService', {
+            recordWorkerStart: vi.fn(),
+            recordProcessComplete: vi.fn(),
+            recordError: vi.fn()
         });
         vi.stubGlobal('batchService', { MAX_ZIP_SIZE_BYTES: 150 * 1024 * 1024 });
         

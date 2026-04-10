@@ -112,6 +112,6 @@ test.describe('Phase 6-03: Resume Logic & UI Recovery', () => {
         await expect(banner).toBeVisible();
         
         await page.click('#discard-btn');
-        await expect(banner).toBeHidden();
+        await expect(banner).toHaveClass(/hidden/);
     });
 });

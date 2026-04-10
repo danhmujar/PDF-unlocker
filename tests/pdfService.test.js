@@ -69,12 +69,21 @@ describe('pdfService (Worker Proxy)', () => {
             addFile: vi.fn().mockResolvedValue(1),
             updateFile: vi.fn().mockResolvedValue(undefined),
             getFilesByJob: vi.fn().mockResolvedValue([]),
+            saveMetric: vi.fn().mockResolvedValue(undefined),
+        });
+
+        // Mock diagnosticsService
+        vi.stubGlobal('diagnosticsService', {
+            recordWorkerStart: vi.fn(),
+            recordProcessComplete: vi.fn(),
+            recordError: vi.fn()
         });
 
         // Evaluate the service code
         const mockWindow = { 
             auditService: window.auditService,
-            persistenceService: window.persistenceService
+            persistenceService: window.persistenceService,
+            diagnosticsService: window.diagnosticsService
         };
         const fn = new Function('window', pdfServiceContent);
         fn(mockWindow);

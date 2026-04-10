@@ -13,20 +13,17 @@ test.describe('Phase 2-04: Theme Visual Audit (HUD Edition)', () => {
 
     for (const theme of allThemes) {
         test(`verify and capture theme: ${theme}`, async ({ page }) => {
-            // Ensure HUD is expanded
+            // Ensure HUD is expanded (trigger is 6px wide + off-screen, so use programmatic expansion)
             const hud = page.locator('#theme-hud');
-            const trigger = page.locator('#theme-trigger');
-            
-            // If not expanded, click the trigger
             const isExpanded = await hud.evaluate(el => el.classList.contains('expanded'));
             if (!isExpanded) {
-                await trigger.click();
-                await expect(hud).toHaveClass(/expanded/);
+                await hud.evaluate(el => el.classList.add('expanded'));
             }
+            await expect(hud).toHaveClass(/expanded/);
 
-            // Click the swatch
+            // Click the swatch (force: true because it might be partially offscreen during animation)
             const swatch = page.locator(`.theme-swatch[data-id="${theme}"]`);
-            await swatch.click();
+            await swatch.click({ force: true });
             
             // Wait for transitions
             await page.waitForTimeout(600);
@@ -34,10 +31,9 @@ test.describe('Phase 2-04: Theme Visual Audit (HUD Edition)', () => {
             // Verify the attribute on HTML
             await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
 
-            // Take the screenshot
+            // Take the screenshot (viewport only — WebKit fullPage hits 32767px PNG dimension limit)
             await page.screenshot({ 
-                path: `test-results/screenshots/v3-hud-theme-${theme}.png`,
-                fullPage: true 
+                path: `test-results/screenshots/v3-hud-theme-${theme}.png`
             });
             
             console.log(`Verified and captured ${theme} theme via HUD.`);

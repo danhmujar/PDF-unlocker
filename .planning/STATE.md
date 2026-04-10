@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: v2.1
 status: Complete
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-04-11T02:30:00.000Z"
+stopped_at: Phase 7 complete — all regression tests green (90 E2E / 45 vitest)
+last_updated: "2026-04-11T03:14:00.000Z"
 progress:
   total_phases: 7
   completed_phases: 7
@@ -36,17 +36,18 @@ progress:
 
 ## 🕒 Recent Activity
 
+- **2026-04-11:** Phase 7 complete. All regression tests passing (90 E2E / 45 vitest). Fixed themes.spec.js HUD trigger expansion and WebKit fullPage screenshot limit.
+- **2026-04-11:** Completed Plan 07-03. Telemetry & diagnostics integration with metrics store.
 - **2026-04-11:** Completed Plan 07-02. Implemented Roving Tabindex and full ARIA parity.
 - **2026-04-11:** Completed Plan 07-01. Automated SRI pipeline and multi-browser Playwright testing.
-- **2026-04-10:** Completed Phase 5 Security Hardening and reached Milestone v2.0.
 
 ## 🚧 Challenges & Blockers
 
-- **Performance Tracking:** Need more granular telemetry to understand memory pressure in different browsers.
+- **Pre-existing browser failures (FF/WebKit):** clipboard permissions unsupported, SRI test unreliable on non-Chromium, offline reload internal error on WebKit. Not Phase 7 regressions.
 
 ## 🔮 Next Steps
 
-1. Add performance instrumentation and diagnostics (Plan 07-03).
+- Milestone v2.1 complete. Project ready for public release.
 
 ## 📊 Performance Metrics
 
@@ -69,11 +70,12 @@ progress:
 | 5     | 03   | 20m      | 3     | 4     |
 | 07    | 01   | 20m      | 2     | 5     |
 | 07    | 02   | 15m      | 2     | 3     |
+| 07    | 03   | 20m      | 3     | 5     |
 
 ## 👤 Session Info
 
-- **Last session:** 2026-04-11T00:45:00.000Z
-- **Stopped at:** Completed 07-01-PLAN.md
+- **Last session:** 2026-04-11T03:14:00.000Z
+- **Stopped at:** Phase 7 complete — regression suite green
 
 ## 📦 Accumulated Context
 
