@@ -4,7 +4,7 @@
  * Depends on: pdfService.js (loaded first via classic script tag).
  */
 
-/* global pdfService, JSZip */
+/* global pdfService, diagnosticsService, JSZip */
 
 // --- Cross-Origin Isolation Enforcement ---
 // Enables high-performance features like SharedArrayBuffer by enforcing COOP/COEP via Service Worker.
@@ -191,6 +191,15 @@ async function continueQueue() {
 
 // Initial engine bootstrap
 initEngine();
+
+// --- Diagnostics Helper ---
+window.showStats = function() {
+    if (window.diagnosticsService) {
+        console.table(window.diagnosticsService.getStats());
+    } else {
+        console.warn("Diagnostics service not available.");
+    }
+};
 
 // --- Async Font Swap (CSP-safe alternative to inline onload) ---
 const fontLink = document.getElementById('google-fonts');

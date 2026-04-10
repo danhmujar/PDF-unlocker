@@ -228,4 +228,36 @@ describe('PersistenceService', () => {
             expect(blob.parts[0]).toEqual(new Uint8Array([1, 2, 3]));
         }
     });
+
+    it('should save a metric', async () => {
+        const metricId = await persistenceService.saveMetric({ type: 'worker_start', timestamp: 12345 });
+        expect(metricId).toBe(1);
+        expect(mockStore.add).toHaveBeenCalledWith(expect.objectContaining({
+            type: 'worker_start',
+            timestamp: 12345
+        }));
+    });
+
+    it('should get recent metrics', async () => {
+        const mockMetric = { id: 1, type: 'process_complete', timestamp: 12345 };
+        mockIndex.openCursor.mockImplementation(() => {
+            const req = { onsuccess: null, onerror: null };
+            setTimeout(() => {
+                req.onsuccess({ 
+                    target: { 
+                        result: { 
+                            value: mockMetric, 
+                            continue: () => {
+                                req.onsuccess({ target: { result: null } });
+                            } 
+                        } 
+                    } 
+                });
+            }, 0);
+            return req;
+        });
+
+        const metrics = await persistenceService.getRecentMetrics(10);
+        expect(metrics).toContainEqual(mockMetric);
+    });
 });

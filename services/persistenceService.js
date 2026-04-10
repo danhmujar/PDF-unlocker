@@ -6,7 +6,7 @@
 
 window.persistenceService = (function () {
     const DB_NAME = 'pdf_unlocker_db';
-    const DB_VERSION = 2; // Incremented for chunks store (Task 06-02)
+    const DB_VERSION = 3; // Incremented for metrics store (Task 07-03)
     let db = null;
 
     /**
@@ -40,6 +40,13 @@ window.persistenceService = (function () {
                 if (!db.objectStoreNames.contains('chunks')) {
                     const chunksStore = db.createObjectStore('chunks', { keyPath: 'id', autoIncrement: true });
                     chunksStore.createIndex('fileId', 'fileId', { unique: false });
+                }
+
+                // Metrics store (Task 07-03): id (auto-increment), timestamp, type
+                if (!db.objectStoreNames.contains('metrics')) {
+                    const metricsStore = db.createObjectStore('metrics', { keyPath: 'id', autoIncrement: true });
+                    metricsStore.createIndex('timestamp', 'timestamp', { unique: false });
+                    metricsStore.createIndex('type', 'type', { unique: false });
                 }
             };
 
@@ -242,6 +249,51 @@ window.persistenceService = (function () {
         return new Blob(blobParts, { type: mimeType });
     }
 
+    /**
+     * Save a performance metric event. (Task 07-03)
+     */
+    async function saveMetric(event) {
+        const database = await init();
+        return new Promise((resolve, reject) => {
+            const transaction = database.transaction(['metrics'], 'readwrite');
+            const store = transaction.objectStore('metrics');
+            
+            const request = store.add({
+                ...event,
+                timestamp: event.timestamp || Date.now()
+            });
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Get recent performance metrics. (Task 07-03)
+     */
+    async function getRecentMetrics(limit = 100) {
+        const database = await init();
+        return new Promise((resolve, reject) => {
+            const transaction = database.transaction(['metrics'], 'readonly');
+            const store = transaction.objectStore('metrics');
+            const index = store.index('timestamp');
+            
+            // Get metrics sorted by timestamp descending
+            const request = index.openCursor(null, 'prev');
+            const results = [];
+            
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor && results.length < limit) {
+                    results.push(cursor.value);
+                    cursor.continue();
+                } else {
+                    resolve(results);
+                }
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
     return {
         init,
         createJob,
@@ -252,6 +304,8 @@ window.persistenceService = (function () {
         getFilesByJob,
         saveChunk,
         getChunks,
-        assembleFileFromChunks
+        assembleFileFromChunks,
+        saveMetric,
+        getRecentMetrics
     };
 })();

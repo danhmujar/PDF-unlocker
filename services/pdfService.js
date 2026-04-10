@@ -4,6 +4,8 @@
  * Now supports concurrent processing via WorkerPool.
  */
 
+/* global persistenceService, diagnosticsService */
+
 window.pdfService = (function () {
     const MAX_FILE_SIZE_MB = 1024; // Increased to 1GB to leverage WorkerFS zero-copy mounting
     const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -43,6 +45,11 @@ window.pdfService = (function () {
                 setupWorker(workerObj);
                 workers.push(workerObj);
                 
+                // Record worker initialization event
+                if (window.diagnosticsService) {
+                    window.diagnosticsService.recordWorkerStart();
+                }
+
                 // Start WASM initialization for each worker
                 worker.postMessage({ type: 'init' });
             }
@@ -192,6 +199,7 @@ window.pdfService = (function () {
          */
         async function startTask(workerObj) {
             const { file } = workerObj.currentTask;
+            workerObj.currentTask.startTime = performance.now();
             
             try {
                 // Task 1 Refactor: Send File object directly to leverage WorkerFS zero-copy mounting
@@ -213,6 +221,13 @@ window.pdfService = (function () {
         async function handleWorkerSuccess(workerObj, outputBuffer, fileName, hash, streamed = false) {
             const { currentTask } = workerObj;
             if (!currentTask) return;
+
+            const duration = performance.now() - currentTask.startTime;
+
+            // Record diagnostics
+            if (window.diagnosticsService) {
+                window.diagnosticsService.recordProcessComplete(currentTask.file.size, duration);
+            }
 
             // Audit Log
             if (window.auditService) {
@@ -290,6 +305,11 @@ window.pdfService = (function () {
         async function handleWorkerError(workerObj, main, sub) {
             const { currentTask } = workerObj;
             if (currentTask) {
+                // Record diagnostics error
+                if (window.diagnosticsService) {
+                    window.diagnosticsService.recordError(`WorkerPool: ${main}`, sub);
+                }
+
                 // Audit Log
                 if (window.auditService) {
                     window.auditService.logEvent('ERROR', {
