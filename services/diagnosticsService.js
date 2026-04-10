@@ -24,7 +24,6 @@ window.diagnosticsService = (function () {
             type: 'worker_start',
             timestamp: Date.now()
         };
-        console.log('[Diagnostics] Worker initialization started');
         saveToPersistence(event);
     }
 
@@ -48,7 +47,6 @@ window.diagnosticsService = (function () {
             speedMBps: fileSize > 0 ? (fileSize / 1024 / 1024) / (duration / 1000) : 0
         };
 
-        console.log(`[Diagnostics] Process complete: ${(fileSize / 1024 / 1024).toFixed(2)} MB in ${duration.toFixed(0)}ms (${event.speedMBps.toFixed(2)} MB/s)`);
         saveToPersistence(event);
     }
 

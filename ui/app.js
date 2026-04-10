@@ -36,21 +36,14 @@ let isEngineReady = false;
 
 async function initEngine() {
     updateStatus('loading', 'Loading engine...', 'Preparing local environment');
-    console.log("DEBUG: Initializing Engine...");
-    
     try {
-        console.log("DEBUG: Calling pdfService.initWasm()");
         await pdfService.initWasm();
-        console.log("DEBUG: pdfService.initWasm() completed");
         isEngineReady = true;
         updateStatus('default', 'Awaiting Document', 'Drag & drop protected PDFs here, or click to browse');
         
         // Check for interrupted jobs after engine is ready
-        console.log("DEBUG: Checking for interrupted jobs");
-        checkForInterruptedJobs();
     } catch (err) {
         console.error("Engine initialization failed:", err);
-        console.error("DEBUG Error Stack:", err.stack);
         isEngineReady = false;
         updateStatus('error', 'Browser Restricted', 'Your browser does not support background processing (WebWorkers).');
     }
@@ -389,11 +382,9 @@ function updateCardStatus(file, state, text, hash = null) {
     const card = document.getElementById(cardId);
     if (!card) {
         console.warn(`Card not found for ID: ${cardId}`, file);
-        console.log('DEBUG: Available IDs:', Array.from(document.querySelectorAll('[id]')).map(el => el.id));
         return;
     }
 
-    console.log(`Updating card ${cardId} to state ${state}`);
     card.className = `file-card ${state}`;
     const statusEl = card.querySelector('.file-status');
     if (statusEl) statusEl.textContent = text;
