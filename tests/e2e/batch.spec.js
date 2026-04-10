@@ -58,7 +58,10 @@ test.describe('Phase 2-03: Advanced ZIP Options & Post-Processing', () => {
                         if (callbacks && callbacks.onStatus) {
                             callbacks.onStatus('processing', 'Unlocking...', 'Mocking');
                         }
-                        return new Blob(['mock content'], { type: 'application/pdf' });
+                        return { 
+                            blob: new Blob(['mock content'], { type: 'application/pdf' }),
+                            hash: 'mock-hash-' + Math.random().toString(36).substring(7)
+                        };
                     }
                 }
             };
@@ -126,8 +129,10 @@ test.describe('Phase 2-03: Advanced ZIP Options & Post-Processing', () => {
         await page.evaluate(() => {
             window.pdfService.WorkerPool.enqueue = async (file, callbacks, config) => {
                 // Return a "large" blob mock (1.1GB)
-                // We use a simple object that looks like a Blob for the size check
-                return { size: 1.1 * 1024 * 1024 * 1024, type: 'application/pdf' };
+                return { 
+                    blob: { size: 1.1 * 1024 * 1024 * 1024, type: 'application/pdf' },
+                    hash: 'large-mock-hash'
+                };
             };
         });
 

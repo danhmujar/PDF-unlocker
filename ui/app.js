@@ -170,6 +170,11 @@ async function renderBentoGrid(files) {
                         </svg>
                         <span>Verified</span>
                     </div>
+                    <button class="card-download-btn hidden" title="Download this file">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                    </button>
                 </div>
             `;
             bentoGrid.appendChild(card);
@@ -207,6 +212,41 @@ function updateCardStatus(file, state, text, hash = null) {
         }
         const badge = card.querySelector('.verified-badge');
         if (badge) badge.classList.remove('hidden');
+
+        // Setup manual download button
+        const downloadBtn = card.querySelector('.card-download-btn');
+        if (downloadBtn) {
+            downloadBtn.classList.remove('hidden');
+            downloadBtn.onclick = () => {
+                // Find the processed blob by name mapping
+                const nameWithoutExt = file.name.toLowerCase().endsWith('.pdf') ? file.name.slice(0, -4) : file.name;
+                const expectedName = `${nameWithoutExt}_unlocked.pdf`;
+                const fileData = currentBatchFiles.find(f => f.name === expectedName);
+
+                if (fileData) {
+                    triggerDownload(fileData.blob, fileData.name);
+                    card.classList.add('downloaded');
+                    downloadBtn.disabled = true;
+                    
+                    // Auto-clear logic: Fade out and remove after 5 seconds
+                    setTimeout(() => {
+                        card.classList.add('fade-out');
+                        setTimeout(() => {
+                            card.remove();
+                            // Cleanup batch storage
+                            currentBatchFiles = currentBatchFiles.filter(f => f !== fileData);
+                            
+                            // Revert UI if grid is now empty
+                            if (bentoGrid.children.length === 0) {
+                                bentoGrid.classList.add('hidden');
+                                dropZone.classList.remove('compact');
+                                updateStatus('default', 'Awaiting Document', 'Drag & drop protected PDFs here, or click to browse');
+                            }
+                        }, 500); // Wait for fade-out animation
+                    }, 5000);
+                }
+            };
+        }
     }
 }
 
@@ -338,11 +378,9 @@ async function finalizeBatch() {
     }
 
     if (currentBatchFiles.length === 1) {
-        // For single file, just download immediately
+        // No longer automatic. User must click the button on the card.
         const file = currentBatchFiles[0];
-        triggerDownload(file.blob, file.name);
-        updateStatus('success', 'Success!', `${file.name} is ready.`);
-        currentBatchFiles = [];
+        updateStatus('success', 'Success!', `${file.name} is ready for download.`);
         resetState();
     } else {
         // Show batch complete overlay for multiple files

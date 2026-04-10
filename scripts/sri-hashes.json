@@ -1,6 +1,6 @@
 {
-  "ui/app.js": "sha384-mn7U78kTmvJN5iURJNEHFc0hOzBU8ht3WMTNqxf984UkqwEqjLljfJMLX//WdPRc",
-  "ui/styles.css": "sha384-xN7ImN9ZQWarsmFIPEuQSzL5Ws7k+Nyg1TRj/JsJPcRIKyttRbhcQOuJzMeOfYkI",
+  "ui/app.js": "sha384-1e/EZQ4GOMu5dzgDuukuGUW+EkzdjbBIeC2eCcheh0l+e8VXbdgovhowsXJKOKA+",
+  "ui/styles.css": "sha384-dLm+KsjLSURJCtqgjqOjQ1yqxvS6ddEH5pO2JQHrD/LRakGUVfQwIPASsWeoGRJk",
   "services/pdfService.js": "sha384-3rGS7pTGxATDNcngPO2IFNT1Mq43t0ZkTGqCnGK/1BbIOoEoIU3Er5HZr2tn+7Cv",
   "services/batchService.js": "sha384-zGnMhCUI7W71mbxW2+FjamrrjpYe8e/fqD7wUj3mRrcQ7OQBer+GZSMunCDLiJZS",
   "services/auditService.js": "sha384-hs9EJXHVuHPgw7EjFx0Zn8uaNuO2nOSZGOgMG2Fe73kebb2dYkY+xUaYyl01THiH",

@@ -1602,3 +1602,48 @@ body.modal-open {
     padding: 3rem 0;
     color: var(--subtitle-color);
 }
+.card-download-btn {
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-download-btn:hover:not(:disabled) {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.card-download-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.card-download-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--icon-color);
+}
+
+.card-download-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.file-card.downloaded {
+    border-color: var(--success-color);
+    background: var(--success-bg);
+}
+
+.file-card.fade-out {
+    opacity: 0;
+    transform: scale(0.95);
+    transition: all 0.5s ease;
+}
