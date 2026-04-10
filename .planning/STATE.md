@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: v2.1
-status: Complete
+status: In Progress
 stopped_at: Phase 7 complete — all regression tests green (90 E2E / 45 vitest)
 last_updated: "2026-04-11T03:14:00.000Z"
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 7
-  total_plans: 22
+  total_plans: 23
   completed_plans: 22
 ---
 
@@ -16,7 +16,7 @@ progress:
 
 ## 🏗️ Current Phase
 
-- **Phase 7: Automation & Accessibility** (Complete)
+- **Phase 8: Optimization of Animation** (Planning Complete)
 
 ## 📊 Progress
 
@@ -27,7 +27,8 @@ progress:
 - **Phase 5:** [==========] 100%
 - **Phase 6:** [==========] 100%
 - **Phase 7:** [==========] 100%
-- **Overall:** [==========] 100%
+- **Phase 8:** [          ] 0%
+- **Overall:** [========= ] 95%
 
 ## 🎯 Active Goals
 
@@ -36,6 +37,7 @@ progress:
 
 ## 🕒 Recent Activity
 
+- **2026-04-11:** Completed research and planning for Phase 8 (Animation Optimization).
 - **2026-04-11:** Phase 7 complete. All regression tests passing (90 E2E / 45 vitest). Fixed themes.spec.js HUD trigger expansion and WebKit fullPage screenshot limit.
 - **2026-04-11:** Completed Plan 07-03. Telemetry & diagnostics integration with metrics store.
 - **2026-04-11:** Completed Plan 07-02. Implemented Roving Tabindex and full ARIA parity.
@@ -81,6 +83,7 @@ progress:
 
 ### 🔄 Roadmap Evolution
 
+- Phase 8 added: optimization of animation
 - **Milestone v2.1:** Focusing on automation and accessibility to harden the project for public release.
 
 ## 💡 Decisions Made

@@ -6,8 +6,9 @@
 - **Phase 4 (Self-Containment):** ✅ COMPLETED
 - **Phase 3 (Performance Hardening):** ✅ COMPLETED
 - **Phase 5 (Security Hardening):** ✅ COMPLETED
-- **Phase 6 (Reliability & Persistence):** 🏗️ IN PROGRESS
+- **Phase 6 (Reliability & Persistence):** ✅ COMPLETED
 - **Phase 7 (Automation & Accessibility):** ✅ COMPLETED
+- **Phase 8 (Animation Optimization):** 🏗️ IN PROGRESS
 
 ---
 
@@ -93,7 +94,9 @@
 - [x] 06-02-PLAN.md — Chunked Worker API & Stream Implementation
 - [x] 06-03-PLAN.md — Resume Logic & UI Recovery Integration
 
+
 ---
+
 
 ## Phase 7: Automation & Accessibility (Maintenance & UX) ✅
 *Goal: Harden the project lifecycle with automated CI pipelines and inclusive UI patterns.*
@@ -108,3 +111,15 @@
 - [x] 07-01-PLAN.md — CI/CD Automation & SRI Registry
 - [x] 07-02-PLAN.md — Accessibility Parity & ARIA
 - [x] 07-03-PLAN.md — Telemetry & Diagnostics Integration
+
+---
+
+## Phase 8: Optimization of Animation 🏗️
+**Goal:** Improve the smoothness and performance of UI animations and visual effects.
+
+**Requirements:**
+- [ ] **REQ-8.1:** Animation performance audit and bottleneck identification.
+- [ ] **REQ-8.2:** Hardware acceleration and compositor optimization.
+
+**Plans:** 0/1 plans executed
+- [ ] 08-PLAN.md — Animation Optimization Strategy

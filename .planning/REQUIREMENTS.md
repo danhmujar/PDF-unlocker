@@ -57,3 +57,7 @@
 - [x] **REQ-7.2:** Multi-Browser CI (Playwright testing for FF/Safari)
 - [x] **REQ-7.3:** Accessibility Audit (ARIA parity for Bento Grid and Theme HUD)
 - [x] **REQ-7.4:** Performance Instrumentation (Telemetry for worker memory)
+
+## ✨ Animation Optimization (Phase 8)
+- [ ] **REQ-8.1:** Animation performance audit and bottleneck identification (FPS/Repaint monitoring).
+- [ ] **REQ-8.2:** Hardware acceleration and compositor optimization (Transform-based mesh movement).
