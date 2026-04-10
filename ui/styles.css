@@ -257,6 +257,16 @@
     --shimmer-color: rgba(255, 255, 255, 0.5);
 }
 
+.app-footer {
+    width: 100%;
+    max-width: 42rem;
+    margin-top: auto;
+    padding: 2rem 0;
+    text-align: center;
+    position: relative;
+    z-index: 50;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -527,7 +537,12 @@ input:focus-visible,
 }
 
 input[type="file"] {
-    display: none;
+    position: absolute;
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    z-index: -1;
 }
 
 /* Modern pulsing document animation for processing state */

@@ -149,6 +149,8 @@ async function continueQueue() {
     const filesToProcess = [...fileQueue];
     fileQueue = [];
 
+    updateStatus('processing', `Unlocking (${currentBatchProcessed + 1}/${currentBatchTotal})`, 'Resuming batch...');
+
     const processingPromises = filesToProcess.map(async (file) => {
         updateCardStatus(file, 'processing', 'Unlocking...');
 
@@ -468,6 +470,8 @@ async function processQueue() {
 
     const filesToProcess = [...fileQueue];
     fileQueue = [];
+
+    updateStatus('processing', `Unlocking (${currentBatchProcessed + 1}/${currentBatchTotal})`, 'Initializing batch...');
 
     const processingPromises = filesToProcess.map(async (file) => {
         updateCardStatus(file, 'processing', 'Unlocking...');
@@ -852,8 +856,8 @@ function openModal() {
     modalBackdrop.classList.add('open');
     modalBackdrop.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
-    // Move focus into the modal for screen readers
-    modalClose.focus();
+    // Move focus into the modal for screen readers - small delay for transition
+    setTimeout(() => modalClose.focus(), 100);
 }
 
 function closeModal() {
@@ -875,11 +879,16 @@ const auditLogBody = document.getElementById('audit-log-body');
 const auditEmptyState = document.getElementById('audit-empty-state');
 
 async function openAuditLog() {
-    closeModal(); // Close About modal first
+    // Close About modal without returning focus to toggle yet
+    modalBackdrop.classList.remove('open');
+    modalBackdrop.setAttribute('aria-hidden', 'true');
+    
     auditModalBackdrop.classList.add('open');
     auditModalBackdrop.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
-    auditModalClose.focus();
+    
+    // Task 7: Focus after visible
+    setTimeout(() => auditModalClose.focus(), 100);
 
     await refreshAuditLog();
 }
