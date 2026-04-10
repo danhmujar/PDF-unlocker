@@ -295,7 +295,7 @@ async function renderBentoGrid(files) {
             card.id = cardId;
             card.innerHTML = `
                 <div class="file-info">
-                    <svg class="file-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <svg class="file-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                         ${SVGS.pdf}
                     </svg>
                     <div class="file-details">
@@ -306,13 +306,13 @@ async function renderBentoGrid(files) {
                 <div class="file-meta">
                     <div class="file-status">Pending</div>
                     <div class="verified-badge hidden" title="Cryptographically Verified: This file was processed locally and its integrity confirmed via SHA-256.">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                         </svg>
                         <span>Verified</span>
                     </div>
-                    <button class="card-download-btn hidden" title="Download this file">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <button class="card-download-btn hidden" title="Download this file" aria-label="Download ${file.name}">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
                     </button>
@@ -708,6 +708,9 @@ function initThemeHud() {
         swatch.className = 'theme-swatch';
         swatch.dataset.id = theme.id;
         swatch.dataset.label = theme.label;
+        swatch.setAttribute('role', 'button');
+        swatch.setAttribute('tabindex', '0');
+        swatch.setAttribute('aria-label', `Switch to ${theme.label} theme`);
         
         // Inline styles for swatch colors (fallback to theme vars if needed)
         // Note: In a real app we'd grab these from a config or computed style
@@ -829,8 +832,8 @@ async function refreshAuditLog() {
                     <div class="hash-cell">
                         <code title="${details.hash || 'N/A'}">${details.hash ? details.hash.substring(0, 8) + '...' : 'N/A'}</code>
                         ${details.hash ? `
-                            <button class="copy-hash-btn" data-hash="${details.hash}" title="Copy full SHA-256">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <button class="copy-hash-btn" data-hash="${details.hash}" title="Copy full SHA-256" aria-label="Copy SHA-256 hash to clipboard">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                                 </svg>
                             </button>
