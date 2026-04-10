@@ -42,6 +42,16 @@ describe('Theme Logic (app.js HUD Integration)', () => {
                     <button id="modal-close"></button>
                     <div class="about-panel"></div>
                 </div>
+
+                <!-- Audit Log Modal -->
+                <div id="audit-modal-backdrop" class="hidden">
+                    <button id="audit-modal-close"></button>
+                    <div id="audit-log-body"></div>
+                    <div id="audit-empty-state" class="hidden"></div>
+                </div>
+                <button id="view-audit-log-btn"></button>
+
+                <div id="offline-indicator" class="hidden"></div>
             </body>
         `;
 

@@ -8,7 +8,7 @@ describe('Phase 4 Compliance: Internalize Engine Dependencies', () => {
         const html = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf8');
 
         // Check CSP
-        const cspMatch = html.match(/content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' https:\/\/fonts\.googleapis\.com; font-src https:\/\/fonts\.gstatic\.com; connect-src 'self'; img-src 'self' data:; worker-src 'self' blob:;"/);
+        const cspMatch = html.match(/content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' https:\/\/fonts\.googleapis\.com; font-src https:\/\/fonts\.gstatic\.com; connect-src 'self'; img-src 'self' data:; worker-src 'self' blob:; object-src 'none';"/);
         expect(cspMatch, 'CSP should strictly allow self and specific fonts/blobs, no CDNs for scripts/connect').not.toBeNull();
         expect(html).not.toContain('unpkg.com');
 
