@@ -1277,6 +1277,11 @@ body.modal-open {
     to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
+@keyframes toastSlideUp {
+    from { transform: translateX(-50%) scale(0.9) translateY(20px); opacity: 0; }
+    to { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
+}
+
 .success-icon-large {
     width: 80px;
     height: 80px;
@@ -1424,7 +1429,7 @@ body.modal-open {
     display: flex;
     align-items: center;
     gap: 1.5rem;
-    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: toastSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .update-content {
