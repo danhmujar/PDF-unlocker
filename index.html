@@ -23,7 +23,7 @@
             href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap"
             rel="stylesheet">
     </noscript>
-    <link rel="stylesheet" href="ui/styles.css" integrity="sha384-E+oAQJIshIjrJ7km6GiEG0K00+xmd5Rw9qbVccfK5sZOsnx5QCTQ5TsXZukBAOPM" crossorigin="anonymous">
+    <link rel="stylesheet" href="ui/styles.css" integrity="sha384-bhVqPHa3OfdV83Cr0qMpsY4Xib8X/Td0PwT/pQJF6+2waP2ZPIFBtqUJQ2ZjBNla" crossorigin="anonymous">
 </head>
 
 <body>
@@ -200,9 +200,7 @@
                         <li>PDF magic-byte validation</li>
                     </ul>
                 </div>
-            </div>
 
-            <div class="about-grid">
                 <div class="about-section" aria-labelledby="section-features">
                     <h3 id="section-features">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -257,7 +255,10 @@
                     </svg>
                     View Security Audit Log
                 </button>
-                <p class="audit-info-text">Logs are stored locally in your browser's IndexedDB and never leave this device.</p>
+                <p class="audit-footnote-text">Logs are stored locally in your browser's IndexedDB and never leave this device.</p>
+                <div class="modal-version-footer">
+                    <span id="app-version-label">v1.0.0</span>
+                </div>
             </div>
         </div>
     </div>
@@ -303,7 +304,7 @@
     <script src="services/diagnosticsService.js" integrity="sha384-AMhmgtGixCMKmDXa3EVT1lzWhSqrf25YjeN85jjx+D+Vux3XqRnAGct1Ve+Cd7lj" crossorigin="anonymous" defer></script>
     <script src="services/pdfService.js" integrity="sha384-+FnffhR0aSEyRd4IDTbUGVG+TKfQcuvGTcppN/pfTqXeJT9apRwkK0iTeww6Z28F" crossorigin="anonymous" defer></script>
     <script src="services/batchService.js" integrity="sha384-hDa89Dbl4VdsPOopbJQv71voTQ8Wt+IMIBldGcCCLbrKR+V+5vO0m35UdYaY+qcv" crossorigin="anonymous" defer></script>
-    <script src="ui/app.js" integrity="sha384-WxDVbPXyEV8edRjZUqx0UWgTajWJRY13x7VfoSVs+NbRp1TysgIFI2HYSUtxLBCx" crossorigin="anonymous" defer></script>
+    <script src="ui/app.js" integrity="sha384-FCAA4Fjh/LcdePw0paL6w/CcNqZHuMyDMtr3pgXIMbt4b0cQSChceVRPJ6doZ/5F" crossorigin="anonymous" defer></script>
     <script src="sw-register.js" integrity="sha384-YU+vu+KlgYkwJh8qyiQz7Ir5S7dCGcYC9F06TZCFcAltL1d26pHMZFbwOTfk8EQe" crossorigin="anonymous" defer></script>
     <!-- Performance Benchmark (Internal Tooling) -->
     <!-- <script type="module" src="tests/perf_test.js"></script> -->

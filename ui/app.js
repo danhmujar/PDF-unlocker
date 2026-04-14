@@ -1094,3 +1094,22 @@ window.addEventListener('offline', updateOnlineStatus);
 
 // Initial check
 updateOnlineStatus();
+
+// --- Version Management ---
+async function initAppVersion() {
+    const versionLabel = document.getElementById('app-version-label');
+    if (!versionLabel) return;
+    
+    try {
+        const response = await fetch('manifest.json');
+        if (!response.ok) throw new Error('Manifest fetch failed');
+        const manifest = await response.json();
+        if (manifest.version) {
+            versionLabel.textContent = `v${manifest.version}`;
+        }
+    } catch (err) {
+        console.warn('Could not load version from manifest, using fallback:', err);
+    }
+}
+
+initAppVersion();

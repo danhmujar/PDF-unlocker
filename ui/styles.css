@@ -4,7 +4,8 @@
 }
 
 /* Aurora (Default/Light) */
-:root, [data-theme="aurora"] {
+:root,
+[data-theme="aurora"] {
     --bg-color: #f8fafc;
     --text-color: #0f172a;
     --accent-color: #2563eb;
@@ -34,7 +35,8 @@
 }
 
 /* Midnight (Deep Dark) */
-[data-theme="midnight"], [data-theme="dark"] {
+[data-theme="midnight"],
+[data-theme="dark"] {
     --bg-color: #0f172a;
     --text-color: #f8fafc;
     --accent-color: #3b82f6;
@@ -724,7 +726,7 @@ input[type="file"] {
 
 .about-panel h2 {
     font-family: var(--font-heading);
-    font-size: 1.25rem;
+    font-size: 1.375rem;
     font-weight: 700;
     color: var(--text-color);
     margin-bottom: 0.5rem;
@@ -732,7 +734,7 @@ input[type="file"] {
 }
 
 .about-panel>.about-section:first-of-type p {
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     line-height: 1.6;
     color: var(--subtitle-color);
     margin-bottom: 0;
@@ -740,7 +742,7 @@ input[type="file"] {
 
 .about-panel h3 {
     font-family: var(--font-heading);
-    font-size: 0.9375rem;
+    font-size: 1.0625rem;
     font-weight: 600;
     color: var(--text-color);
     margin-bottom: 0.4rem;
@@ -759,7 +761,7 @@ input[type="file"] {
 .about-panel p,
 .about-panel li {
     color: var(--subtitle-color);
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     line-height: 1.6;
 }
 
@@ -779,7 +781,7 @@ input[type="file"] {
     content: '';
     position: absolute;
     left: 0;
-    top: 0.55rem;
+    top: 0.6rem;
     width: 5px;
     height: 5px;
     border-radius: 50%;
@@ -789,7 +791,7 @@ input[type="file"] {
 /* Premium Bento Grid */
 .about-grid {
     display: grid;
-    grid-template-columns: 1.15fr 0.85fr;
+    grid-template-columns: 1fr 1fr;
     gap: 1.25rem;
 }
 
@@ -817,7 +819,7 @@ input[type="file"] {
     display: inline-block;
     padding: 0.15rem 0.6rem;
     margin: 0.15rem;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 500;
     border-radius: 6px;
     background: var(--card-hover-bg);
@@ -833,12 +835,10 @@ input[type="file"] {
 
 /* --- Developer Credit --- */
 .dev-credit {
-    margin-top: 1.25rem;
-    padding-top: 1rem;
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
     border-top: 1px solid var(--card-border);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+    text-align: center;
 }
 
 .dev-credit-qr {
@@ -855,7 +855,7 @@ input[type="file"] {
 }
 
 .dev-credit-info {
-    flex: 1;
+    width: 100%;
 }
 
 .dev-credit-info strong {
@@ -864,27 +864,43 @@ input[type="file"] {
     font-weight: 700;
     color: var(--text-color);
     display: block;
-    margin-bottom: 0.15rem;
+    margin-bottom: 0.5rem;
+    text-align: left;
 }
 
 .dev-credit-info span {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     color: var(--subtitle-color);
     line-height: 1.5;
     display: block;
 }
 
 .dev-credit-info a {
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     color: var(--accent-color);
     text-decoration: none;
     font-weight: 500;
-    margin-top: 0.25rem;
+    margin-top: 0.75rem;
     display: inline-block;
 }
 
 .dev-credit-info a:hover {
     text-decoration: underline;
+}
+
+.modal-version-footer {
+    margin-top: 1.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--card-border);
+    text-align: center;
+    opacity: 0.6;
+}
+
+#app-version-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--subtitle-color);
+    letter-spacing: 0.025em;
 }
 
 /* --- Theme HUD (Vertical Sidebar) --- */
@@ -1082,7 +1098,7 @@ input[type="file"] {
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
-    box-shadow: 
+    box-shadow:
         0 4px 6px -1px rgba(0, 0, 0, 0.05),
         inset 0 0 0 1px var(--inner-border);
 }
@@ -1091,7 +1107,7 @@ input[type="file"] {
     transform: translateY(-4px);
     background: var(--card-hover-bg);
     border-color: var(--card-hover-border);
-    box-shadow: 
+    box-shadow:
         0 20px 25px -5px rgba(0, 0, 0, 0.1),
         inset 0 0 0 1px var(--inner-border-hover);
 }
@@ -1177,7 +1193,7 @@ input[type="file"] {
     .bento-grid:has(.file-card:nth-child(2):last-child) {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .bento-grid:has(.file-card:nth-child(1):last-child) {
         grid-template-columns: 1fr;
     }
@@ -1251,8 +1267,13 @@ body.modal-open {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .batch-complete-overlay .overlay-content {
@@ -1265,7 +1286,7 @@ body.modal-open {
     max-width: 32rem;
     width: 90%;
     text-align: center;
-    box-shadow: 
+    box-shadow:
         0 25px 50px -12px rgba(0, 0, 0, 0.25),
         inset 0 0 0 1px var(--inner-border);
     transform: scale(1);
@@ -1273,13 +1294,27 @@ body.modal-open {
 }
 
 @keyframes slideUp {
-    from { transform: scale(0.9) translateY(20px); opacity: 0; }
-    to { transform: scale(1) translateY(0); opacity: 1; }
+    from {
+        transform: scale(0.9) translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
 }
 
 @keyframes toastSlideUp {
-    from { transform: translateX(-50%) scale(0.9) translateY(20px); opacity: 0; }
-    to { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
+    from {
+        transform: translateX(-50%) scale(0.9) translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(-50%) scale(1) translateY(0);
+        opacity: 1;
+    }
 }
 
 .success-icon-large {
@@ -1324,7 +1359,9 @@ body.modal-open {
     }
 }
 
-.primary-btn, .secondary-btn, .text-btn {
+.primary-btn,
+.secondary-btn,
+.text-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1389,7 +1426,8 @@ body.modal-open {
     margin-bottom: 1rem;
 }
 
-.primary-btn svg, .secondary-btn svg {
+.primary-btn svg,
+.secondary-btn svg {
     width: 20px;
     height: 20px;
 }
@@ -1462,8 +1500,15 @@ body.modal-open {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
 }
 
 .hidden {
@@ -1517,8 +1562,17 @@ body.modal-open {
 }
 
 @keyframes verified-glow {
-    0%, 100% { box-shadow: 0 0 5px rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); }
-    50% { box-shadow: 0 0 12px rgba(16, 185, 129, 0.3); border-color: rgba(16, 185, 129, 0.5); }
+
+    0%,
+    100% {
+        box-shadow: 0 0 5px rgba(16, 185, 129, 0.1);
+        border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    50% {
+        box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+        border-color: rgba(16, 185, 129, 0.5);
+    }
 }
 
 /* --- Audit Log Styling --- */
@@ -1624,14 +1678,34 @@ body.modal-open {
 }
 
 /* --- Utility Classes (CSP Compliance) --- */
-.text-center { text-align: center; }
-.w-full { width: 100%; }
-.justify-center { justify-content: center; }
+.text-center {
+    text-align: center;
+}
 
-.audit-info-text {
-    font-size: 0.65rem;
+.w-full {
+    width: 100%;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.about-panel .audit-footnote-text {
+    font-size: 0.625rem !important;
     color: var(--subtitle-color);
     margin-top: 0.5rem;
+}
+
+#view-audit-log-btn {
+    font-size: 0.8125rem;
+    padding: 0.6rem 1rem;
+    width: auto;
+    margin: 0 auto;
+}
+
+#view-audit-log-btn svg {
+    width: 16px;
+    height: 16px;
 }
 
 .audit-panel-wide {
@@ -1649,6 +1723,7 @@ body.modal-open {
     padding: 3rem 0;
     color: var(--subtitle-color);
 }
+
 .card-download-btn {
     background: var(--accent-color);
     color: white;
@@ -1717,8 +1792,15 @@ body.modal-open {
 }
 
 @keyframes slideDown {
-    from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
-    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+    from {
+        transform: translateX(-50%) translateY(-20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
 }
 
 .recovery-content {

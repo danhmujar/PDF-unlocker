@@ -1,4 +1,5 @@
 {
+  "version": "1.0.0",
   "name": "Secure PDF Unlocker",
   "short_name": "PDF Unlock",
   "description": "Remove owner-level restrictions from PDF documents locally in your browser using WebAssembly.",
